@@ -820,3 +820,21 @@ body {
     gap: 1.5rem;
   }
 }
+
+.dashboard-row {
+  display: flex;
+  gap: 1.75rem; /* consistent with your dashboard spacing */
+  margin-top: 1.75rem;
+}
+
+.dashboard-row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Keep consistent look on smaller screens */
+@media (max-width: 1024px) {
+  .dashboard-row {
+    flex-direction: column;
+  }
+}

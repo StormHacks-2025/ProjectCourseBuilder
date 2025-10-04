@@ -13,7 +13,9 @@ export default function Dashboard() {
         </div>
 
         <form className="dashboard-search" role="search">
-          <span className="dashboard-search__icon" aria-hidden>🔍</span>
+          <span className="dashboard-search__icon" aria-hidden>
+            🔍
+          </span>
           <input
             type="search"
             name="dashboard-search"
@@ -24,13 +26,19 @@ export default function Dashboard() {
       </header>
 
       <div className="dashboard-grid">
+        {/* Left column */}
         <section className="dashboard-grid__main">
           <Profile />
-          <QuickActions />
+
+          {/* Horizontally aligned cards */}
+          <div className="dashboard-row">
+            <QuickActions />
+            <Schedule />
+          </div>
         </section>
 
+        {/* Right column */}
         <aside className="dashboard-grid__aside">
-          <Schedule />
           <NotificationCenter />
         </aside>
       </div>
