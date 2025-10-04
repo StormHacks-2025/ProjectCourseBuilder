@@ -1,5 +1,7 @@
 import Profile from '../dashboard/Profile.jsx';
-import RecentActivity from '../dashboard/RecentActivity.jsx';
+import Schedule from '../dashboard/Schedule.jsx';
+import QuickActions from '../dashboard/QuickActions.jsx';
+import NotificationCenter from '../dashboard/NotificationCenter.jsx';
 
 export default function Dashboard() {
   return (
@@ -21,9 +23,16 @@ export default function Dashboard() {
         </form>
       </header>
 
-      <div className="dashboard-page__content">
-        <Profile />
-        <RecentActivity />
+      <div className="dashboard-grid">
+        <section className="dashboard-grid__main">
+          <Profile />
+          <QuickActions />
+        </section>
+
+        <aside className="dashboard-grid__aside">
+          <Schedule />
+          <NotificationCenter />
+        </aside>
       </div>
     </div>
   );
