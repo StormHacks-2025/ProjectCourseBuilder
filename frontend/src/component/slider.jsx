@@ -11,13 +11,14 @@ import {
   Trash2,
 } from "lucide-react";
 
-export const Slider =() => {
+export const  Slider =() => {
   const [isOpen, setIsOpen] = useState(false);
   const [stage, setStage] = useState("chat"); // chat | loading | results
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [promptText, setPromptText] = useState("");
+  const [finalSignal, setFinalSignal] = useState(false); // only render results after true
 
   const [courses, setCourses] = useState([
     {
@@ -76,14 +77,30 @@ export const Slider =() => {
 
   const handleSend = () => {
     if (!message.trim()) return;
+
+ 
     setMessages((prev) => [...prev, { text: message, sender: "user" }]);
     setMessage("");
-    setStage("loading");
-    setLoadingProgress(0);
+
+   
+    const botAsksMore = Math.random() < 0.5;
+    if (botAsksMore) {
+      setMessages((prev) => [
+        ...prev,
+        { text: "Can you tell me your preferred campus?", sender: "bot" },
+      ]);
+      setStage("chat"); 
+      setFinalSignal(false);
+    } else {
+      // final signal
+      setStage("loading");
+      setFinalSignal(true);
+      setLoadingProgress(0);
+    }
   };
 
   useEffect(() => {
-    if (stage === "loading") {
+    if (stage === "loading" && finalSignal) {
       const interval = setInterval(() => {
         setLoadingProgress((prev) => {
           if (prev >= 100) {
@@ -95,7 +112,7 @@ export const Slider =() => {
         });
       }, 20);
     }
-  }, [stage]);
+  }, [stage, finalSignal]);
 
   const toggleKeep = (idx, action) => {
     setCourses((prev) =>
@@ -117,6 +134,7 @@ export const Slider =() => {
     setStage("chat");
     setMessages([]);
     setCourses((prev) => prev.map((c) => ({ ...c, keep: null })));
+    setFinalSignal(false);
   };
 
   const CircleLoader = ({ percent }) => {
@@ -166,6 +184,7 @@ export const Slider =() => {
             className="absolute right-0 top-0 h-full bg-white shadow-2xl flex flex-col"
             style={{ width: "30vw", minWidth: "400px" }}
           >
+            {/* Header */}
             <div className="p-4 bg-blue-500 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5" />
@@ -236,7 +255,7 @@ export const Slider =() => {
                 </div>
               )}
 
-              {stage === "loading" && (
+              {stage === "loading" && finalSignal && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                   <CircleLoader percent={loadingProgress} />
                   <p className="text-gray-500 text-sm">
@@ -245,29 +264,22 @@ export const Slider =() => {
                 </div>
               )}
 
-              {stage === "results" && (
+              {stage === "results" && finalSignal && (
                 <div className="flex-1 overflow-y-auto flex flex-col gap-3 relative">
-                  <AnimatePresence>
-                    {promptText && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -20, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="fixed top-20 left-1/2 -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-xl shadow-2xl text-sm font-medium z-50"
-                      >
-                        {promptText}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                  {/* Top info */}
+                  <div className="mb-3 text-center text-gray-600 font-medium">
+                    Based on your responses, these are the recommended courses:
+                  </div>
 
-                  <div className="flex-1 flex flex-col gap-3 pb-24">
+                  {/* Courses */}
+                  <div className="flex-1 flex flex-col gap-3 pb-24 overflow-y-auto">
                     {courses.map((course, idx) => (
                       <motion.div
                         key={idx}
                         layout
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: idx * 0.05 }}
+                        transition={{ delay: idx * 0.1 }}
                         className={`p-4 rounded-2xl border-2 transition-all cursor-pointer
                                   ${
                                     course.keep === true
@@ -277,7 +289,7 @@ export const Slider =() => {
                                       : "bg-white border-blue-100 hover:border-blue-300 shadow-sm"
                                   }`}
                       >
-                        <div className="flex justify-between items-start mb-2">
+                        <div className="flex justify-between items-start mb-3">
                           <div>
                             <h3 className="font-bold text-base text-gray-800">
                               {course.title}
@@ -288,21 +300,20 @@ export const Slider =() => {
                           </div>
                         </div>
 
-                        <div className="space-y-1 text-sm text-gray-600 mb-2">
+                        {/* Course info */}
+                        <div className="space-y-2 text-sm text-gray-600 mb-3">
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-blue-500" />
-                            <span>
-                              {course.days.join(", ")} • {course.timeDisplay}
-                            </span>
+                            <Clock className="w-4 h-4 text-blue-500" />{" "}
+                            {course.days.join(", ")} • {course.timeDisplay}
                           </div>
                           <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-blue-500" />
-                            <span>{course.prof}</span>
+                            <User className="w-4 h-4 text-blue-500" />{" "}
+                            {course.prof}
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-blue-500 fill-blue-500" />
-                              <span>{course.rating}</span>
+                              <Star className="w-4 h-4 text-blue-500 fill-blue-500" />{" "}
+                              {course.rating}
                             </div>
                             <span className="text-xs">
                               👥 {course.friendsInCourse} friends
@@ -310,26 +321,12 @@ export const Slider =() => {
                           </div>
                         </div>
 
-                        <div className="flex gap-2 text-xs mb-2">
-                          <span className="px-2 py-1 bg-blue-50 rounded-md">
-                            {course.campus}
-                          </span>
-                          <span className="px-2 py-1 bg-blue-50 rounded-md">
-                            {course.breadth}
-                          </span>
-                          <span className="px-2 py-1 bg-blue-50 rounded-md">
-                            {course.year}
-                          </span>
-                        </div>
-
+                        {/* Buttons */}
                         <div className="flex gap-2 pt-2 border-t border-gray-100">
                           <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleKeep(idx, true);
-                            }}
+                            onClick={() => toggleKeep(idx, true)}
                             disabled={course.keep === true}
                             className={`flex-1 py-2 rounded-xl font-medium flex items-center justify-center gap-2
                                          ${
@@ -345,10 +342,7 @@ export const Slider =() => {
                           <motion.button
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleKeep(idx, false);
-                            }}
+                            onClick={() => toggleKeep(idx, false)}
                             disabled={course.keep === false}
                             className={`flex-1 py-2 rounded-xl font-medium flex items-center justify-center gap-2
                                          ${
@@ -365,6 +359,7 @@ export const Slider =() => {
                     ))}
                   </div>
 
+                  {/* Bottom buttons */}
                   <div className="fixed bottom-4 left-0 right-0 px-4 flex gap-2 bg-gradient-to-t from-white via-white to-transparent pt-4">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
