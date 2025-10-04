@@ -1,38 +1,67 @@
-import React from 'react';
-import Profile from './components/Profile';
-import RecentActivity from './components/RecentActivity';
-import './App.css';
+import { Outlet, NavLink } from "react-router-dom";
 
-function App() {
+export default function App() {
   return (
-    <div className="dashboard-root">
-      <main className="dashboard-surface">
-        <header className="dashboard-header">
-          <div>
-            <h1>Dashboard</h1>
-            <p>Overview of your learning journey</p>
-          </div>
-          <div className="header-controls">
-            <div className="search-field" role="search">
-              <span aria-hidden>🔍</span>
-              <input type="search" placeholder="Search" />
-            </div>
-            <button className="icon-button" type="button" aria-label="Add new">＋</button>
-            <button className="icon-button" type="button" aria-label="Notifications">🔔</button>
-          </div>
-        </header>
+    <div className="flex min-h-screen">
+      {/* Sidebar */}
+      <nav className="w-64 bg-gray-800 text-white flex flex-col p-6">
+        <h1 className="text-2xl font-bold mb-8">ProjectCourseBuilder</h1>
+        <NavLink
+          to="/dashboard"
+          className={({ isActive }) =>
+            `mb-4 px-4 py-2 rounded hover:bg-gray-700 ${
+              isActive ? "bg-gray-700" : ""
+            }`
+          }
+        >
+          Dashboard
+        </NavLink>
+        <NavLink
+          to="/builder"
+          className={({ isActive }) =>
+            `mb-4 px-4 py-2 rounded hover:bg-gray-700 ${
+              isActive ? "bg-gray-700" : ""
+            }`
+          }
+        >
+          Builder
+        </NavLink>
+        <NavLink
+          to="/community"
+          className={({ isActive }) =>
+            `mb-4 px-4 py-2 rounded hover:bg-gray-700 ${
+              isActive ? "bg-gray-700" : ""
+            }`
+          }
+        >
+          Community
+        </NavLink>
+        <NavLink
+          to="/settings"
+          className={({ isActive }) =>
+            `mb-4 px-4 py-2 rounded hover:bg-gray-700 ${
+              isActive ? "bg-gray-700" : ""
+            }`
+          }
+        >
+          Settings
+        </NavLink>
+        <NavLink
+          to="/pricing"
+          className={({ isActive }) =>
+            `mb-4 px-4 py-2 rounded hover:bg-gray-700 ${
+              isActive ? "bg-gray-700" : ""
+            }`
+          }
+        >
+          Pricing
+        </NavLink>
+      </nav>
 
-        <section className="dashboard-columns flex gap-6">
-          <div className="dashboard-column flex-[2]">
-            <Profile />
-          </div>
-            <div className="dashboard-column flex-[1]">
-            <RecentActivity />
-          </div>
-        </section>
+ 
+      <main className="flex-1 p-6 bg-gray-100">
+        <Outlet />
       </main>
     </div>
   );
 }
-
-export default App;
