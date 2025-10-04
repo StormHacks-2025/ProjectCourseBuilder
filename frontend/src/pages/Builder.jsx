@@ -1,3 +1,5 @@
+import {SearchBarBuilder} from '../component/seachBarBuilder.jsx'
+
 export default function Builder() {
-  return <h1>Builder Page</h1>;
+  return <SearchBarBuilder/>;
 }

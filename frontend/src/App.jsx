@@ -2,9 +2,9 @@ import { Outlet, NavLink } from "react-router-dom";
 
 export default function App() {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen relative flex-1">
       {/* Sidebar */}
-      <nav className="w-64 bg-gray-800 text-white flex flex-col p-6">
+      <nav className="w-64 bg-gray-800 text-white flex flex-col p-2">
         <h1 className="text-2xl font-bold mb-8">ProjectCourseBuilder</h1>
         <NavLink
           to="/dashboard"
@@ -58,8 +58,7 @@ export default function App() {
         </NavLink>
       </nav>
 
- 
-      <main className="flex-1 p-6 bg-gray-100">
+      <main className="relative flex-1 p-6 bg-gray-100">
         <Outlet />
       </main>
     </div>
