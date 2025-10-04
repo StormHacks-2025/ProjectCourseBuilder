@@ -364,6 +364,36 @@ body {
   color: #9ca3af;
 }
 
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+.dashboard-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.dashboard-page__title {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.dashboard-page__subtitle {
+  margin: 0;
+  color: #6b7280;
+}
+
+.dashboard-page__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
 @media (max-width: 1100px) {
   .dashboard-root {
     flex-direction: column;
