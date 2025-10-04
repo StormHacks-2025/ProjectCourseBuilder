@@ -224,9 +224,17 @@ body {
 }
 
 .profile-header {
+  width: 100%;
   display: flex;
-  gap: 1.2rem;
   align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.profile-header__identity {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
 }
 
 .profile-avatar {
@@ -246,6 +254,25 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.profile-upgrade {
+  border-radius: 20px;
+  padding: 0.4rem 1.1rem;
+  background: #111827;
+  color: #f9fafb;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-decoration: none;
+  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.22);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.profile-upgrade:hover,
+.profile-upgrade:focus-visible {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 30px rgba(17, 24, 39, 0.25);
 }
 
 .profile-name {

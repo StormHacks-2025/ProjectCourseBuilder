@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Profile = () => {
   const studentName = 'SFU Student';
@@ -12,11 +13,17 @@ const Profile = () => {
   return (
     <section className="profile-card">
       <header className="profile-header">
-        <div className="profile-avatar" aria-hidden>aq</div>
-        <div className="profile-meta">
-          <p className="profile-name">{studentName}</p>
-          <p className="profile-role">{studentYear}</p>
+        <div className="profile-header__identity">
+          <div className="profile-avatar" aria-hidden>aq</div>
+          <div className="profile-meta">
+            <p className="profile-name">{studentName}</p>
+            <p className="profile-role">{studentYear}</p>
+          </div>
         </div>
+
+        <Link to="/pricing" className="profile-upgrade">
+          Upgrade
+        </Link>
       </header>
 
       <div className="profile-progress">
