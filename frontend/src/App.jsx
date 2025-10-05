@@ -1,4 +1,4 @@
-import { Outlet, NavLink } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Link } from 'react-router-dom';
 import './App.css';
 
 const navPrimary = [
@@ -10,12 +10,22 @@ const navPrimary = [
 
 const navSecondary = [{ to: '/pricing', label: 'Pricing', Icon: ChartIcon }];
 
+const blankProfile =
+  "https://ui-avatars.com/api/?name=User&background=cccccc&color=ffffff";
+
 export default function App() {
+  const navigate = useNavigate();
+  const user = JSON.parse(localStorage.getItem("currentUser"));
+
+  const handleLogout = () => {
+    localStorage.removeItem("currentUser");
+    navigate("/login");
+  };
+
   return (
     <div className="dashboard-root">
       <div className="dashboard-frame">
         <aside className="sidebar">
-
           <nav className="sidebar__nav sidebar__nav--primary" aria-label="Primary">
             {navPrimary.map(({ to, label, Icon }) => (
               <NavLink
@@ -59,9 +69,56 @@ export default function App() {
           </nav>
         </aside>
 
-        <main className="dashboard-content">
+        <div className="dashboard-content">
+          {/* Profile/Logout/Login button in top right */}
+          <header className="flex justify-end items-center p-4" style={{ background: "none" }}>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <img
+                  src={blankProfile}
+                  alt="profile"
+                  className="w-8 h-8 rounded-full border"
+                />
+                <span className="font-medium">{user.name}</span>
+                <button
+                  onClick={handleLogout}
+                  style={{
+                    marginLeft: "16px",
+                    padding: "10px 24px",
+                    fontSize: "1.1rem",
+                    background: "black",
+                    color: "white",
+                    borderRadius: "8px",
+                    border: "none",
+                    cursor: "pointer"
+                  }}
+                >
+                  Log Out
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                style={{
+                  marginRight: "24px",
+                  marginLeft: "auto",
+                  padding: "12px 32px",
+                  fontSize: "1.15rem",
+                  background: "none",
+                  color: "black",
+                  borderRadius: "8px",
+                  border: "2px solid black",
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  boxShadow: "none"
+                }}
+              >
+                Log In
+              </Link>
+            )}
+          </header>
           <Outlet />
-        </main>
+        </div>
       </div>
     </div>
   );
