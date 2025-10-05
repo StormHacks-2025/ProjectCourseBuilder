@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -75,29 +76,83 @@ export const  Slider =() => {
     },
   ]);
 
-  const handleSend = () => {
-    if (!message.trim()) return;
+const handleSend = async () => {
+  if (!message.trim()) return;
 
- 
-    setMessages((prev) => [...prev, { text: message, sender: "user" }]);
-    setMessage("");
+  // Add user message to chat
+  setMessages((prev) => [...prev, { text: message, sender: "user" }]);
+  setMessage("");
 
-   
-    const botAsksMore = Math.random() < 0.5;
-    if (botAsksMore) {
+  // Start loading
+  setStage("loading");
+  setFinalSignal(false);
+  setLoadingProgress(0);
+
+  try {
+    const response = await fetch("http://localhost:5000/api/generate-courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userPrompt: message,
+        transcript: ["CMPT 102", "CMPT 125"], // replace with actual user transcript
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    console.log("Backend response:", data);
+
+    // Make sure we have an array of recommendations
+    const recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+
+    if (recommendations.length === 0) {
       setMessages((prev) => [
         ...prev,
-        { text: "Can you tell me your preferred campus?", sender: "bot" },
+        { text: "No course recommendations found.", sender: "bot" },
       ]);
-      setStage("chat"); 
-      setFinalSignal(false);
-    } else {
-      // final signal
-      setStage("loading");
-      setFinalSignal(true);
-      setLoadingProgress(0);
+      setStage("chat");
+      return;
     }
-  };
+
+    // Add bot message
+    setMessages((prev) => [
+      ...prev,
+      { text: "Here are your recommended courses:", sender: "bot" },
+    ]);
+
+    // Map backend courses to frontend structure
+    const mappedCourses = recommendations.map((course) => ({
+      title: course.title || "Untitled Course",
+      level: course.level || "N/A",
+      prof: course.prof || "TBA",
+      rating: course.rating || 0,
+      campus: course.campus || "TBD",
+      year: course.year || "N/A",
+      breadth: course.breadth || "N/A",
+      friendsInCourse: course.friendsInCourse || 0,
+      keep: null,
+    }));
+
+    setCourses(mappedCourses);
+    setStage("results");
+    setFinalSignal(true);
+
+  } catch (err) {
+    console.error("Failed to fetch courses:", err);
+    setMessages((prev) => [
+      ...prev,
+      { text: "❌ Failed to contact server.", sender: "bot" },
+    ]);
+    setStage("chat");
+  }
+};
+
+
+
+
 
   useEffect(() => {
     if (stage === "loading" && finalSignal) {
