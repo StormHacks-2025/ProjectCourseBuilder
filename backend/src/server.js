@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import axios from "axios";
+
 
 
 
@@ -104,6 +106,82 @@ app.post("/api/login", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+app.post("/api/generate-courses", async (req, res) => {
+  const { transcript } = req.body;
+
+  if (!transcript || !Array.isArray(transcript)) {
+    return res
+      .status(400)
+      .json({ message: "Transcript is required and must be an array." });
+  }
+
+  try {
+    // Gemini API request
+    const response = await axios.post(
+      "https://generativelanguage.googleapis.com/v1beta2/models/gemini-2.5-flash-latest:generateMessage",
+      {
+        prompt: {
+          messages: [
+            {
+              author: "user",
+              content: [
+                {
+                  type: "text",
+                  text: `Based on this transcript ${transcript.join(
+                    ", "
+                  )}, recommend SFU CS courses. Respond as JSON array with courseId and courseName.`,
+                },
+              ],
+            },
+          ],
+        },
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.GEMINI_API_KEY}`, // paste AI Studio token here if env not used
+        },
+      }
+    );
+
+    // Extract text output
+    const textOutput =
+      response.data?.candidates?.[0]?.message?.content?.[0]?.text || "";
+
+    let courses = [];
+    try {
+      courses = JSON.parse(textOutput);
+    } catch (e) {
+      console.error("Failed to parse Gemini response as JSON:", textOutput);
+      return res
+        .status(500)
+        .json({ message: "Failed to parse courses from Gemini response." });
+    }
+
+    if (!Array.isArray(courses) || courses.length === 0) {
+      return res.status(500).json({ message: "No courses generated." });
+    }
+
+    // Randomly pick 3 recommended courses
+    const shuffled = courses.sort(() => 0.5 - Math.random());
+    const recommended = shuffled.slice(0, 3).map((course) => ({
+      ...course,
+      reason: "Based on your transcript relevance and course balance",
+    }));
+
+    res.json({ allCourses: courses, recommendedCourses: recommended });
+  } catch (err) {
+    console.error(
+      "Error contacting Gemini API:",
+      err.response?.data || err.message
+    );
+    res.status(500).json({ message: "Server error contacting Gemini API." });
+  }
+});
+
+
 
 // Get profile
 app.get("/api/profile", async (req, res) => {
