@@ -260,7 +260,8 @@ export const SearchBarBuilder = ({
     if (pinnedCourses.find((c) => c.title === course.title)) {
       setPinnedCourses(pinnedCourses.filter((c) => c.title !== course.title));
     } else {
-      setPinnedCourses([...pinnedCourses, course]);
+      const courseWithCurrentSlots = { ...course };
+      setPinnedCourses([...pinnedCourses, courseWithCurrentSlots]);
     }
   };
 

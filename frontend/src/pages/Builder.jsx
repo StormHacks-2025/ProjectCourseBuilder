@@ -12,7 +12,7 @@ export default function Builder() {
 
   return (
     <div className="flex gap-6 p-6 bg-gray-50 min-h-screen">
-      <div className="w-96">
+      <div className="w-96 flex-shrink-0">
         <SearchBarBuilder
           selectedCourses={selectedCourses}
           setSelectedCourses={setSelectedCourses}
@@ -20,12 +20,13 @@ export default function Builder() {
           setPinnedCourses={setPinnedCourses}
         />
       </div>
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <WeeklySchedule
           pinnedCourses={pinnedCourses}
           variableCourses={variableCourses}
           selectedCourses={selectedCourses}
           setSelectedCourses={setSelectedCourses}
+          setPinnedCourses={setPinnedCourses}
         />
       </div>
     </div>
