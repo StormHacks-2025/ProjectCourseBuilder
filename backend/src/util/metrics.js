@@ -10,6 +10,8 @@ export async function calculateCourseRating(courseId) {
 
   if (!rows.length) return null;
 
+
+  
   let score = 0;
   let total = 0;
 

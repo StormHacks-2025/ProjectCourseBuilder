@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,24 +9,16 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    const storedUser = {
-      email: "test@example.com",
-      password: "password",
-      paid: true, // change to false to test non-paid user
-    };
+    const users = JSON.parse(localStorage.getItem("users") || "[]");
+    const user = users.find((u) => u.email === email && u.password === password);
 
-    // Save hardcoded user to localStorage if not already saved
-    if (!localStorage.getItem("user")) {
-      localStorage.setItem("user", JSON.stringify(storedUser));
-    }
-
-    const user = JSON.parse(localStorage.getItem("user"));
-
-    if (email === user.email && password === user.password) {
-      navigate("/dashboard");
-    } else {
+    if (!user) {
       alert("Invalid email or password");
+      return;
     }
+
+    localStorage.setItem("currentUser", JSON.stringify(user));
+    navigate("/dashboard");
   };
 
   return (
@@ -39,7 +31,7 @@ export default function Login() {
           <input
             type="email"
             placeholder="Email"
-            className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border border-gray-300 rounded-lg p-3"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -47,18 +39,24 @@ export default function Login() {
           <input
             type="password"
             placeholder="Password"
-            className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
+            className="border border-gray-300 rounded-lg p-3"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
           <button
             type="submit"
-            className="bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition font-semibold"
+            className="bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 font-semibold"
           >
             Log In
           </button>
         </form>
+        <p className="text-center text-sm text-gray-500 mt-4">
+          Don’t have an account?{" "}
+          <Link to="/signup" className="text-blue-500 hover:underline">
+            Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );

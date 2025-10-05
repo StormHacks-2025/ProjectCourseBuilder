@@ -14,12 +14,7 @@ export default function Dashboard() {
         </div>
 
         <div className="flex flex-col items-end gap-2">
-          <Link
-            to="/login"
-            className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition"
-          >
-            Sign In
-          </Link>
+          
 
           <form className="dashboard-search" role="search">
             <span className="dashboard-search__icon" aria-hidden>
