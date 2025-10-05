@@ -22,7 +22,7 @@ export const Pricing=()=> {
     {
       name: "Pro",
       price: "$4.99",
-      period: "per month",
+      period: "per year",
       description: "Advanced tools for serious students",
       features: [
         "Everything in Free",

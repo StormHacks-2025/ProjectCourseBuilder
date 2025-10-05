@@ -1,92 +1,83 @@
-import React, { useEffect, useState } from "react";
-import Profile from "../dashboard/Profile.jsx";
-import Schedule from "../dashboard/Schedule.jsx";
-import QuickActions from "../dashboard/QuickActions.jsx";
-import NotificationCenter from "../dashboard/NotificationCenter.jsx";
+import React, { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Dashboard() {
-  const [user, setUser] = useState(null);
-  const [transcriptSet, setTranscriptSet] = useState(false);
-  const [loading, setLoading] = useState(true);
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        // Get the current user from localStorage
-        const storedUser = JSON.parse(localStorage.getItem("currentUser"));
-        if (!storedUser) {
-          // redirect if no user found
-          window.location.href = "/login";
-          return;
-        }
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-        setUser(storedUser);
+    try {
+      const response = await fetch("http://localhost:4000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
 
-        // Fetch profile info
-        const profileRes = await fetch("http://localhost:4000/api/profile", {
-          headers: { "x-user-email": storedUser.email },
-        });
-        const profileData = await profileRes.json();
+      const data = await response.json();
 
-        // Fetch transcript status
-        const transcriptRes = await fetch(
-          `http://localhost:4000/api/transcripts?email=${storedUser.email}`
-        );
-        const transcriptData = await transcriptRes.json();
-
-        setTranscriptSet(transcriptData?.set ?? false);
-      } catch (err) {
-        console.error("Failed to fetch user data:", err);
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        alert(data.message || "Login failed");
+        return;
       }
-    };
 
-    fetchUserData();
-  }, []);
+      // Save user to localStorage
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
 
-  if (loading) return <p className="text-center mt-10">Loading dashboard...</p>;
+      // Optionally fetch profile info or other user-specific data
+      const profileRes = await fetch("http://localhost:4000/api/profile", {
+        headers: { "x-user-email": data.user.email },
+      });
+      const profileData = await profileRes.json();
+
+      console.log("Profile info:", profileData.user);
+
+      // Redirect to dashboard
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Login failed. Please try again.");
+      console.error(err);
+    }
+  };
 
   return (
-    <div className="dashboard-page">
-      <header className="dashboard-page__header">
-        <div>
-          <h1 className="dashboard-page__title">Dashboard</h1>
-          <p className="dashboard-page__subtitle">
-            Welcome, {user?.name ?? "Student"}! Your current progress overview
-          </p>
-        </div>
-
-        <div className="flex flex-col items-end gap-2">
-          <form className="dashboard-search" role="search">
-            <span className="dashboard-search__icon" aria-hidden>
-              🔍
-            </span>
-            <input
-              type="search"
-              name="dashboard-search"
-              placeholder="Search"
-              aria-label="Search"
-            />
-          </form>
-        </div>
-      </header>
-
-      <div className="dashboard-grid">
-        {/* Left column */}
-        <section className="dashboard-grid__main">
-          <Profile user={user} transcriptSet={transcriptSet} />
-
-          <div className="dashboard-row">
-            <QuickActions user={user} />
-            <Schedule user={user} />
-          </div>
-        </section>
-
-        {/* Right column */}
-        <aside className="dashboard-grid__aside">
-          <NotificationCenter user={user} />
-        </aside>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white shadow-md rounded-2xl p-8 w-full max-w-md">
+        <h2 className="text-3xl font-semibold mb-6 text-center text-gray-800">
+          Log In
+        </h2>
+        <form onSubmit={handleLogin} className="flex flex-col gap-5">
+          <input
+            type="email"
+            placeholder="Email"
+            className="border border-gray-300 rounded-lg p-3"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="border border-gray-300 rounded-lg p-3"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 font-semibold"
+          >
+            Log In
+          </button>
+        </form>
+        <p className="text-center text-sm text-gray-500 mt-4">
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-blue-500 hover:underline">
+            Sign Up
+          </Link>
+        </p>
       </div>
     </div>
   );
