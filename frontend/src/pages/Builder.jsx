@@ -11,6 +11,23 @@ export default function Builder() {
     (c) => !pinnedCourses.find((p) => p.title === c.title)
   );
 
+  const handleLoadCoursesFromSlider = (coursesToAdd) => {
+    // Filter out courses that are already selected
+    const newCourses = coursesToAdd.filter(
+      (newCourse) => !selectedCourses.find((c) => c.title === newCourse.title)
+    );
+
+    if (newCourses.length === 0) {
+      alert("All selected courses are already in your schedule");
+      return;
+    }
+
+    // Add the new courses to selectedCourses
+    setSelectedCourses((prev) => [...prev, ...newCourses]);
+
+    console.log(`Added ${newCourses.length} courses to schedule`);
+  };
+
   return (
     <div className="flex gap-6 p-6 bg-gray-50 min-h-screen">
       <div className="w-96 flex-shrink-0">
@@ -30,9 +47,7 @@ export default function Builder() {
           setPinnedCourses={setPinnedCourses}
         />
       </div>
-      <div>
-     <Slider></Slider> 
-      </div>
+      <Slider onLoadCourses={handleLoadCoursesFromSlider} />
     </div>
   );
 }

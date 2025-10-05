@@ -12,160 +12,113 @@ import {
   Trash2,
 } from "lucide-react";
 
-export const  Slider =() => {
+export const Slider = ({ onLoadCourses }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [stage, setStage] = useState("chat"); // chat | loading | results
+  const [stage, setStage] = useState("chat");
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [promptText, setPromptText] = useState("");
-  const [finalSignal, setFinalSignal] = useState(false); // only render results after true
+  const [finalSignal, setFinalSignal] = useState(false);
 
-  const [courses, setCourses] = useState([
-    {
-      title: "React Basics",
-      level: "Beginner",
-      days: ["Mon", "Wed"],
-      timeDisplay: "9:00 AM - 10:30 AM",
-      prof: "John Doe",
-      rating: 4.5,
-      campus: "Burnaby",
-      year: "2nd Year",
-      breadth: "B-Hum",
-      friendsInCourse: 3,
-      keep: null,
-    },
-    {
-      title: "Advanced JS",
-      level: "Advanced",
-      days: ["Tue", "Thu"],
-      timeDisplay: "2:00 PM - 3:30 PM",
-      prof: "Jane Smith",
-      rating: 4.8,
-      campus: "Surrey",
-      year: "3rd Year",
-      breadth: "B-Sci",
-      friendsInCourse: 1,
-      keep: null,
-    },
-    {
-      title: "Tailwind CSS",
-      level: "Intermediate",
-      days: ["Mon", "Wed", "Fri"],
-      timeDisplay: "11:00 AM - 12:00 PM",
-      prof: "Alice Lee",
-      rating: 4.7,
-      campus: "Online",
-      year: "2nd Year",
-      breadth: "B-Soc",
-      friendsInCourse: 5,
-      keep: null,
-    },
-    {
-      title: "Node.js API",
-      level: "Intermediate",
-      days: ["Tue", "Thu"],
-      timeDisplay: "4:00 PM - 5:30 PM",
-      prof: "Bob Brown",
-      rating: 4.6,
-      campus: "Burnaby",
-      year: "3rd Year",
-      breadth: "B-Sci",
-      friendsInCourse: 2,
-      keep: null,
-    },
-  ]);
+  const [courses, setCourses] = useState([]);
 
-const handleSend = async () => {
-  if (!message.trim()) return;
+  const handleSend = async () => {
+    if (!message.trim()) return;
 
-  // Add user message to chat
-  setMessages((prev) => [...prev, { text: message, sender: "user" }]);
-  setMessage("");
+    setMessages((prev) => [...prev, { text: message, sender: "user" }]);
+    setMessage("");
 
-  // Start loading
-  setStage("loading");
-  setFinalSignal(false);
-  setLoadingProgress(0);
+    setStage("loading");
+    setFinalSignal(false);
+    setLoadingProgress(0);
 
-  try {
-    const response = await fetch("http://localhost:4000/api/generate-courses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userPrompt: message,
-        transcript: ["CMPT 102", "CMPT 125"], // replace with actual user transcript
-      }),
-    });
+    try {
+      const response = await fetch(
+        "http://localhost:4000/api/generate-courses",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userPrompt: message,
+            transcript: ["CMPT 102", "CMPT 125"],
+          }),
+        }
+      );
 
-    if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
-    }
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
 
-    const data = await response.json();
-    console.log("Backend response:", data);
+      const data = await response.json();
+      console.log("Backend response:", data);
 
-    // Make sure we have an array of recommendations
-    const recommendations = Array.isArray(data.recommendations) ? data.recommendations : [];
+      const recommendations = Array.isArray(data.recommendations)
+        ? data.recommendations
+        : [];
 
-    if (recommendations.length === 0) {
+      if (recommendations.length === 0) {
+        setMessages((prev) => [
+          ...prev,
+          { text: "No course recommendations found.", sender: "bot" },
+        ]);
+        setStage("chat");
+        return;
+      }
+
       setMessages((prev) => [
         ...prev,
-        { text: "No course recommendations found.", sender: "bot" },
+        { text: "Here are your recommended courses:", sender: "bot" },
+      ]);
+
+      const mappedCourses = recommendations.map((course) => ({
+        title: course.title || "Untitled Course",
+        fullTitle: course.fullTitle || "",
+        level: course.level || "N/A",
+        days: course.days || ["Mon", "Wed"],
+        timeDisplay: course.timeDisplay || "TBD",
+        prof: course.prof || "TBA",
+        rating: course.rating || 0,
+        campus: course.campus || "TBD",
+        year: course.year || "N/A",
+        breadth: course.breadth || "N/A",
+        friendsInCourse: course.friendsInCourse || 0,
+        variations: course.variations || [],
+        department: course.department || "",
+        courseNumber: course.courseNumber || "",
+        sections: course.sections || [],
+        prereqs: course.prereqs || [],
+        description: course.description || "",
+        units: course.units || "3",
+        dropPercent: course.dropPercent || 15,
+        keep: null,
+      }));
+
+      setCourses(mappedCourses);
+      setStage("results");
+      setFinalSignal(true);
+    } catch (err) {
+      console.error("Failed to fetch courses:", err);
+      setMessages((prev) => [
+        ...prev,
+        { text: "Failed to contact server.", sender: "bot" },
       ]);
       setStage("chat");
-      return;
     }
-
-    // Add bot message
-    setMessages((prev) => [
-      ...prev,
-      { text: "Here are your recommended courses:", sender: "bot" },
-    ]);
-
-    // Map backend courses to frontend structure
-    const mappedCourses = recommendations.map((course) => ({
-      title: course.title || "Untitled Course",
-      level: course.level || "N/A",
-      prof: course.prof || "TBA",
-      rating: course.rating || 0,
-      campus: course.campus || "TBD",
-      year: course.year || "N/A",
-      breadth: course.breadth || "N/A",
-      friendsInCourse: course.friendsInCourse || 0,
-      keep: null,
-    }));
-
-    setCourses(mappedCourses);
-    setStage("results");
-    setFinalSignal(true);
-
-  } catch (err) {
-    console.error("Failed to fetch courses:", err);
-    setMessages((prev) => [
-      ...prev,
-      { text: "❌ Failed to contact server.", sender: "bot" },
-    ]);
-    setStage("chat");
-  }
-};
-
-
-
-
+  };
 
   useEffect(() => {
     if (stage === "loading" && finalSignal) {
       const interval = setInterval(() => {
         setLoadingProgress((prev) => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setStage("results");
-            return 100;
+          if (prev >= 95) {
+            return prev;
           }
-          return prev + 2;
+          return prev + Math.random() * 15;
         });
-      }, 20);
+      }, 300);
+
+      return () => clearInterval(interval);
     }
   }, [stage, finalSignal]);
 
@@ -190,6 +143,21 @@ const handleSend = async () => {
     setMessages([]);
     setCourses((prev) => prev.map((c) => ({ ...c, keep: null })));
     setFinalSignal(false);
+  };
+
+  const handleLoadCourses = () => {
+    const coursesToLoad = courses.filter((c) => c.keep === true);
+
+    if (coursesToLoad.length === 0) {
+      alert("Please select at least one course to add by clicking 'Keep'");
+      return;
+    }
+
+    if (onLoadCourses) {
+      onLoadCourses(coursesToLoad);
+    }
+
+    handleClose();
   };
 
   const CircleLoader = ({ percent }) => {
@@ -218,10 +186,11 @@ const handleSend = async () => {
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             strokeLinecap="round"
+            className="transition-all duration-300"
           />
         </svg>
         <span className="absolute text-2xl font-bold text-blue-600">
-          {percent}%
+          {Math.round(percent)}%
         </span>
       </div>
     );
@@ -239,7 +208,6 @@ const handleSend = async () => {
             className="absolute right-0 top-0 h-full bg-white shadow-2xl flex flex-col"
             style={{ width: "30vw", minWidth: "400px" }}
           >
-            {/* Header */}
             <div className="p-4 bg-blue-500 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageCircle className="w-5 h-5" />
@@ -310,23 +278,47 @@ const handleSend = async () => {
                 </div>
               )}
 
-              {stage === "loading" && finalSignal && (
+              {stage === "loading" && (
                 <div className="flex-1 flex flex-col items-center justify-center gap-4">
                   <CircleLoader percent={loadingProgress} />
-                  <p className="text-gray-500 text-sm">
-                    Finding best courses for you...
-                  </p>
+                  <div className="text-center">
+                    <p className="text-gray-700 font-medium mb-2">
+                      Finding best courses for you...
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <div
+                        className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
+                    </div>
+                    <p className="text-gray-500 text-xs mt-3">
+                      {loadingProgress < 30 && "Analyzing your transcript..."}
+                      {loadingProgress >= 30 &&
+                        loadingProgress < 60 &&
+                        "Consulting AI advisor..."}
+                      {loadingProgress >= 60 &&
+                        loadingProgress < 90 &&
+                        "Fetching course details..."}
+                      {loadingProgress >= 90 && "Almost done..."}
+                    </p>
+                  </div>
                 </div>
               )}
 
               {stage === "results" && finalSignal && (
                 <div className="flex-1 overflow-y-auto flex flex-col gap-3 relative">
-                  {/* Top info */}
                   <div className="mb-3 text-center text-gray-600 font-medium">
                     Based on your responses, these are the recommended courses:
                   </div>
 
-                  {/* Courses */}
                   <div className="flex-1 flex flex-col gap-3 pb-24 overflow-y-auto">
                     {courses.map((course, idx) => (
                       <motion.div
@@ -355,19 +347,18 @@ const handleSend = async () => {
                           </div>
                         </div>
 
-                        {/* Course info */}
                         <div className="space-y-2 text-sm text-gray-600 mb-3">
                           <div className="flex items-center gap-2">
-                            <Clock className="w-4 h-4 text-blue-500" />{" "}
+                            <Clock className="w-4 h-4 text-blue-500" />
                             {course.days.join(", ")} • {course.timeDisplay}
                           </div>
                           <div className="flex items-center gap-2">
-                            <User className="w-4 h-4 text-blue-500" />{" "}
+                            <User className="w-4 h-4 text-blue-500" />
                             {course.prof}
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
-                              <Star className="w-4 h-4 text-blue-500 fill-blue-500" />{" "}
+                              <Star className="w-4 h-4 text-blue-500 fill-blue-500" />
                               {course.rating}
                             </div>
                             <span className="text-xs">
@@ -376,7 +367,6 @@ const handleSend = async () => {
                           </div>
                         </div>
 
-                        {/* Buttons */}
                         <div className="flex gap-2 pt-2 border-t border-gray-100">
                           <motion.button
                             whileHover={{ scale: 1.02 }}
@@ -390,7 +380,7 @@ const handleSend = async () => {
                                              : "bg-green-100 text-green-700 hover:bg-green-200"
                                          }`}
                           >
-                            <Check className="w-4 h-4" />{" "}
+                            <Check className="w-4 h-4" />
                             {course.keep === true ? "Added" : "Keep"}
                           </motion.button>
 
@@ -406,7 +396,7 @@ const handleSend = async () => {
                                              : "bg-red-100 text-red-700 hover:bg-red-200"
                                          }`}
                           >
-                            <Trash2 className="w-4 h-4" />{" "}
+                            <Trash2 className="w-4 h-4" />
                             {course.keep === false ? "Removed" : "Remove"}
                           </motion.button>
                         </div>
@@ -414,7 +404,6 @@ const handleSend = async () => {
                     ))}
                   </div>
 
-                  {/* Bottom buttons */}
                   <div className="fixed bottom-4 left-0 right-0 px-4 flex gap-2 bg-gradient-to-t from-white via-white to-transparent pt-4">
                     <motion.button
                       whileHover={{ scale: 1.02 }}
@@ -427,7 +416,7 @@ const handleSend = async () => {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      onClick={handleClose}
+                      onClick={handleLoadCourses}
                       className="flex-1 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium shadow-lg"
                     >
                       Load Courses
@@ -440,7 +429,6 @@ const handleSend = async () => {
         )}
       </AnimatePresence>
 
-      {/* Fixed tab */}
       <motion.button
         whileHover={{ x: -5 }}
         whileTap={{ scale: 0.95 }}
@@ -461,4 +449,4 @@ const handleSend = async () => {
       </motion.button>
     </div>
   );
-}
+};
