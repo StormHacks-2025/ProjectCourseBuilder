@@ -8,10 +8,17 @@ import {
   X,
   ChevronDown,
   ChevronUp,
+  Pin,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export const SearchBarBuilder = () => {
+export const SearchBarBuilder = ({
+  selectedCourses,
+  setSelectedCourses,
+  pinnedCourses,
+  setPinnedCourses,
+}) => {
   const [search, setSearch] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
@@ -38,6 +45,17 @@ export const SearchBarBuilder = () => {
       year: "2nd Year",
       breadth: "B-Hum",
       friendsInCourse: 3,
+      variations: [
+        [
+          { day: "Mon", startHour: 9, endHour: 10.5 },
+          { day: "Wed", startHour: 9, endHour: 10.5 },
+        ],
+        [
+          { day: "Tue", startHour: 14, endHour: 15.5 },
+          { day: "Thu", startHour: 14, endHour: 15.5 },
+        ],
+        [{ day: "Fri", startHour: 10, endHour: 12 }],
+      ],
     },
     {
       title: "Advanced JS",
@@ -51,6 +69,17 @@ export const SearchBarBuilder = () => {
       year: "3rd Year",
       breadth: "B-Sci",
       friendsInCourse: 1,
+      variations: [
+        [
+          { day: "Tue", startHour: 14, endHour: 15.5 },
+          { day: "Thu", startHour: 14, endHour: 15.5 },
+        ],
+        [
+          { day: "Mon", startHour: 11, endHour: 12.5 },
+          { day: "Wed", startHour: 11, endHour: 12.5 },
+        ],
+        [{ day: "Fri", startHour: 13, endHour: 15.5 }],
+      ],
     },
     {
       title: "Tailwind CSS",
@@ -64,6 +93,17 @@ export const SearchBarBuilder = () => {
       year: "2nd Year",
       breadth: "B-Soc",
       friendsInCourse: 5,
+      variations: [
+        [
+          { day: "Mon", startHour: 11, endHour: 12 },
+          { day: "Wed", startHour: 11, endHour: 12 },
+          { day: "Fri", startHour: 11, endHour: 12 },
+        ],
+        [
+          { day: "Tue", startHour: 13, endHour: 14 },
+          { day: "Thu", startHour: 13, endHour: 14 },
+        ],
+      ],
     },
     {
       title: "Node.js API",
@@ -77,6 +117,16 @@ export const SearchBarBuilder = () => {
       year: "3rd Year",
       breadth: "B-Sci",
       friendsInCourse: 2,
+      variations: [
+        [
+          { day: "Tue", startHour: 16, endHour: 17.5 },
+          { day: "Thu", startHour: 16, endHour: 17.5 },
+        ],
+        [
+          { day: "Mon", startHour: 15, endHour: 16.5 },
+          { day: "Wed", startHour: 15, endHour: 16.5 },
+        ],
+      ],
     },
     {
       title: "Python Basics",
@@ -90,6 +140,17 @@ export const SearchBarBuilder = () => {
       year: "1st Year",
       breadth: "B-Hum",
       friendsInCourse: 7,
+      variations: [
+        [
+          { day: "Mon", startHour: 10, endHour: 11.5 },
+          { day: "Wed", startHour: 10, endHour: 11.5 },
+        ],
+        [
+          { day: "Tue", startHour: 9, endHour: 10.5 },
+          { day: "Thu", startHour: 9, endHour: 10.5 },
+        ],
+        [{ day: "Fri", startHour: 14, endHour: 16.5 }],
+      ],
     },
     {
       title: "Data Structures",
@@ -103,6 +164,17 @@ export const SearchBarBuilder = () => {
       year: "2nd Year",
       breadth: "B-Sci",
       friendsInCourse: 4,
+      variations: [
+        [
+          { day: "Tue", startHour: 13, endHour: 14.5 },
+          { day: "Thu", startHour: 13, endHour: 14.5 },
+        ],
+        [
+          { day: "Mon", startHour: 8, endHour: 9.5 },
+          { day: "Wed", startHour: 8, endHour: 9.5 },
+        ],
+        [{ day: "Fri", startHour: 9, endHour: 11.5 }],
+      ],
     },
   ];
 
@@ -170,6 +242,28 @@ export const SearchBarBuilder = () => {
       setSelectedCourse(filteredCourses[0]);
   };
 
+  const handleEnroll = () => {
+    if (
+      selectedCourse &&
+      !selectedCourses.find((c) => c.title === selectedCourse.title)
+    ) {
+      setSelectedCourses([...selectedCourses, selectedCourse]);
+    }
+  };
+
+  const handleRemoveCourse = (courseTitle) => {
+    setSelectedCourses(selectedCourses.filter((c) => c.title !== courseTitle));
+    setPinnedCourses(pinnedCourses.filter((c) => c.title !== courseTitle));
+  };
+
+  const handlePinCourse = (course) => {
+    if (pinnedCourses.find((c) => c.title === course.title)) {
+      setPinnedCourses(pinnedCourses.filter((c) => c.title !== course.title));
+    } else {
+      setPinnedCourses([...pinnedCourses, course]);
+    }
+  };
+
   const campusOptions = ["Burnaby", "Surrey", "Online"];
   const daysOptions = ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const hoursOptions = [
@@ -184,7 +278,7 @@ export const SearchBarBuilder = () => {
   const breadthOptions = ["B-Hum", "B-Sci", "B-Soc"];
 
   return (
-    <div className="relative w-96 min-h-screen p-6 bg-white shadow-xl flex flex-col rounded-3xl">
+    <div className="relative w-full min-h-screen p-6 bg-white shadow-xl flex flex-col rounded-3xl">
       <div className="relative mb-4 flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
@@ -210,6 +304,44 @@ export const SearchBarBuilder = () => {
           <Filter className="w-5 h-5" />
         </motion.button>
       </div>
+
+      {selectedCourses.length > 0 && (
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-gray-700 mb-2">
+            Enrolled Courses
+          </h4>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {selectedCourses.map((course, idx) => (
+              <div
+                key={idx}
+                className="flex items-center gap-2 p-2 bg-blue-50 rounded-lg"
+              >
+                <span className="flex-1 text-sm font-medium">
+                  {course.title}
+                </span>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handlePinCourse(course)}
+                  className={`p-1 rounded ${
+                    pinnedCourses.find((c) => c.title === course.title)
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Pin className="w-4 h-4" />
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => handleRemoveCourse(course.title)}
+                  className="p-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </motion.button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {showFilters && (
@@ -401,10 +533,10 @@ export const SearchBarBuilder = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex-1 overflow-y-auto space-y-2 mb-4">
+      <div className="flex-1 overflow-y-auto space-y-3 mb-4">
         {search.length === 0 ? (
           <div className="text-center py-12 text-blue-300">
-            Start typing to search courses
+            <p className="text-sm">Start typing to search courses</p>
           </div>
         ) : filteredCourses.length > 0 ? (
           filteredCourses.map((course, idx) => (
@@ -416,24 +548,119 @@ export const SearchBarBuilder = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => handleSelect(course)}
-              className={`p-4 rounded-2xl cursor-pointer transition-all duration-200 ${
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData("course", JSON.stringify(course));
+                e.dataTransfer.effectAllowed = "copy";
+              }}
+              className={`p-4 rounded-2xl cursor-grab active:cursor-grabbing transition-all duration-200 ${
                 selectedCourse?.title === course.title
-                  ? "bg-blue-500 text-white shadow-lg"
+                  ? "bg-blue-500 text-white shadow-lg ring-2 ring-blue-400"
                   : "bg-blue-50 hover:bg-blue-100 text-gray-700"
               }`}
             >
-              <div className="flex justify-between items-start mb-1">
-                <span className="font-semibold">{course.title}</span>
-                <span className="text-xs">{course.level}</span>
+              <div className="flex justify-between items-start mb-2">
+                <h3 className="font-bold text-base">{course.title}</h3>
+                <span
+                  className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    selectedCourse?.title === course.title
+                      ? "bg-white/20 text-white"
+                      : "bg-blue-200 text-blue-700"
+                  }`}
+                >
+                  {course.level}
+                </span>
               </div>
-              <div className="text-xs opacity-80">
-                {course.days.join(", ")} • {course.hours}
+
+              <div className="space-y-1.5 text-sm">
+                <div
+                  className={`flex items-center gap-2 ${
+                    selectedCourse?.title === course.title
+                      ? "text-blue-100"
+                      : "text-gray-600"
+                  }`}
+                >
+                  <Clock className="w-4 h-4" />
+                  <span>
+                    {course.days.join(", ")} • {course.hours}
+                  </span>
+                </div>
+
+                <div
+                  className={`flex items-center gap-2 ${
+                    selectedCourse?.title === course.title
+                      ? "text-blue-100"
+                      : "text-gray-600"
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>{course.prof}</span>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div
+                    className={`flex items-center gap-1 ${
+                      selectedCourse?.title === course.title
+                        ? "text-blue-100"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    <Star className="w-4 h-4 fill-current" />
+                    <span>{course.rating}</span>
+                  </div>
+
+                  <div
+                    className={`text-xs ${
+                      selectedCourse?.title === course.title
+                        ? "text-blue-100"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {course.friendsInCourse} friends
+                  </div>
+                </div>
+
+                <div
+                  className={`flex gap-2 text-xs pt-1 ${
+                    selectedCourse?.title === course.title
+                      ? "text-blue-100"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <span
+                    className={`px-2 py-0.5 rounded-md ${
+                      selectedCourse?.title === course.title
+                        ? "bg-white/20"
+                        : "bg-blue-100"
+                    }`}
+                  >
+                    {course.campus}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-md ${
+                      selectedCourse?.title === course.title
+                        ? "bg-white/20"
+                        : "bg-blue-100"
+                    }`}
+                  >
+                    {course.breadth}
+                  </span>
+                  <span
+                    className={`px-2 py-0.5 rounded-md ${
+                      selectedCourse?.title === course.title
+                        ? "bg-white/20"
+                        : "bg-blue-100"
+                    }`}
+                  >
+                    {course.year}
+                  </span>
+                </div>
               </div>
             </motion.div>
           ))
         ) : (
           <div className="text-center py-12 text-blue-300">
-            No courses found
+            <p className="text-sm">No courses found</p>
           </div>
         )}
       </div>
@@ -467,23 +694,33 @@ export const SearchBarBuilder = () => {
               <span className="text-xs">{selectedCourse.rating}</span>
             </div>
             <div className="text-xs">
-              👥 {selectedCourse.friendsInCourse} friends
+              {selectedCourse.friendsInCourse} friends
             </div>
           </div>
 
           <div className="text-xs text-gray-600 mb-3 space-y-1">
-            <div>📍 {selectedCourse.campus}</div>
-            <div>📚 {selectedCourse.breadth}</div>
-            <div>🎓 {selectedCourse.year}</div>
-            <div>⏰ {selectedCourse.hours}</div>
+            <div>{selectedCourse.campus}</div>
+            <div>{selectedCourse.breadth}</div>
+            <div>{selectedCourse.year}</div>
+            <div>{selectedCourse.hours}</div>
           </div>
 
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3 mb-4 bg-blue-500 text-white rounded-xl font-medium hover:bg-blue-600 hover:shadow-lg transition-all duration-200"
+            onClick={handleEnroll}
+            disabled={selectedCourses.find(
+              (c) => c.title === selectedCourse.title
+            )}
+            className={`w-full py-3 mb-4 rounded-xl font-medium transition-all duration-200 ${
+              selectedCourses.find((c) => c.title === selectedCourse.title)
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-600 hover:shadow-lg"
+            }`}
           >
-            Enroll Now
+            {selectedCourses.find((c) => c.title === selectedCourse.title)
+              ? "Already Enrolled"
+              : "Enroll Now"}
           </motion.button>
 
           <div>
@@ -510,4 +747,4 @@ export const SearchBarBuilder = () => {
       )}
     </div>
   );
-}
+};
