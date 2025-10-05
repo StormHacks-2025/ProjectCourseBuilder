@@ -1,5 +1,5 @@
 // utils/courseStats.js
-import supabase from "../db.js"; // your supabase client
+import { supabase } from "../db.js"; // your supabase client
 
 export async function calculateCourseRating(courseId) {
   const { data: rows, error } = await supabase

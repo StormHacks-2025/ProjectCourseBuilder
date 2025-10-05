@@ -6,7 +6,9 @@ import { v4 as uuidv4 } from "uuid";
 import pdfRoute from "./routes/pdfRoute.js"; // PDF routes
 
 import coursesRouter from "./routes/courseJa.js";
-;
+import courseStatsRoutes from "./routes/courseStats.js";
+
+// Add this with your other route imports
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -28,7 +30,7 @@ app.use(fileUpload()); // for PDF uploads
 
 // -------------------- Routes --------------------
 
-
+app.use("/api/course-stats", courseStatsRoutes);
 app.use("/api/courses", coursesRouter);
 // Signup
 app.post("/api/signup", async (req, res) => {

@@ -10,6 +10,8 @@ import {
   ChevronUp,
   Pin,
   Trash2,
+  Users,
+  TrendingDown,
 } from "lucide-react";
 
 const API_BASE = "http://localhost:4000/api";
@@ -24,6 +26,7 @@ export const SearchBarBuilder = () => {
   const [loading, setLoading] = useState(false);
   const [year, setYear] = useState("current");
   const [term, setTerm] = useState("current");
+  const [userId] = useState("user-123"); // You'll want to get this from your auth system
 
   const [filters, setFilters] = useState({
     campus: [],
@@ -35,6 +38,40 @@ export const SearchBarBuilder = () => {
     friendsSort: null,
   });
 
+  // Fetch course stats from database
+  const fetchCourseStats = async (courseId) => {
+    try {
+      const response = await fetch(
+        `${API_BASE}/course-stats/stats/${courseId}/${userId}`
+      );
+      if (response.ok) {
+        const stats = await response.json();
+        return stats;
+      }
+    } catch (error) {
+      console.error("Error fetching course stats:", error);
+    }
+    return { rating: 3.5, friendsCount: 0, dropPercent: 15 }; // Default values
+  };
+
+  // Find course ID in database based on department and number
+  const findCourseId = async (department, courseNumber) => {
+    try {
+      const response = await fetch(
+        `${API_BASE}/courses/find-id?department=${encodeURIComponent(
+          department
+        )}&number=${encodeURIComponent(courseNumber)}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        return data.courseId;
+      }
+    } catch (error) {
+      console.error("Error finding course ID:", error);
+    }
+    return null;
+  };
+
   useEffect(() => {
     const fetchCourses = async () => {
       if (!search || search.length < 2) {
@@ -44,7 +81,6 @@ export const SearchBarBuilder = () => {
 
       setLoading(true);
       try {
-        // Provide safe defaults for year and term
         const currentYear = year || "current";
         const currentTerm = term || "current";
 
@@ -62,37 +98,54 @@ export const SearchBarBuilder = () => {
 
         const data = await response.json();
 
-        const transformed = data.map((course) => ({
-          title: `${course.department?.toUpperCase()} ${course.value}`,
-          fullTitle: course.title,
-          level:
-            course.value >= 400
-              ? "Advanced"
-              : course.value >= 200
-              ? "Intermediate"
-              : "Beginner",
-          department: course.department,
-          courseNumber: course.value,
-          days: ["Mon", "Wed"], // Placeholder
-          hours: "TBD",
-          prof: "TBD",
-          rating: 4.5,
-          prereqs: [],
-          campus: "Burnaby",
-          year:
-            course.value >= 400
-              ? "4th Year"
-              : course.value >= 300
-              ? "3rd Year"
-              : course.value >= 200
-              ? "2nd Year"
-              : "1st Year",
-          breadth: "B-Sci",
-          friendsInCourse: 0,
-          variations: [],
-        }));
+        // Transform courses and fetch stats for each
+        const transformedCourses = await Promise.all(
+          data.map(async (course) => {
+            const courseId = await findCourseId(
+              course.department,
+              course.value
+            );
+            let stats = { rating: 3.5, friendsCount: 0, dropPercent: 15 };
 
-        setCourses(transformed);
+            if (courseId) {
+              stats = await fetchCourseStats(courseId);
+            }
+
+            return {
+              id: courseId,
+              title: `${course.department?.toUpperCase()} ${course.value}`,
+              fullTitle: course.title,
+              level:
+                course.value >= 400
+                  ? "Advanced"
+                  : course.value >= 200
+                  ? "Intermediate"
+                  : "Beginner",
+              department: course.department,
+              courseNumber: course.value,
+              days: ["Mon", "Wed"], // Will be updated in handleSelect
+              hours: "TBD",
+              prof: "TBD",
+              rating: stats.rating,
+              prereqs: [],
+              campus: "Burnaby",
+              year:
+                course.value >= 400
+                  ? "4th Year"
+                  : course.value >= 300
+                  ? "3rd Year"
+                  : course.value >= 200
+                  ? "2nd Year"
+                  : "1st Year",
+              breadth: "B-Sci",
+              friendsInCourse: stats.friendsCount,
+              dropPercent: stats.dropPercent,
+              variations: [],
+            };
+          })
+        );
+
+        setCourses(transformedCourses);
       } catch (err) {
         console.error("Error fetching courses:", err);
         setCourses([]);
@@ -102,9 +155,8 @@ export const SearchBarBuilder = () => {
     };
 
     const debounce = setTimeout(fetchCourses, 300);
-
     return () => clearTimeout(debounce);
-  }, [search, year, term]);
+  }, [search, year, term, userId]);
 
   const toggleFilter = (category, value) => {
     setFilters((prev) => {
@@ -160,7 +212,7 @@ export const SearchBarBuilder = () => {
     return result;
   };
 
-  const filteredCourses = getFilteredAndSortedCourses().slice(0, 4); // Limit to 4 courses
+  const filteredCourses = getFilteredAndSortedCourses().slice(0, 4);
 
   const handleSelect = async (course) => {
     setSelectedCourse({ ...course, loading: true });
@@ -213,7 +265,6 @@ export const SearchBarBuilder = () => {
               if (daysMap[dayCode]) days.push(daysMap[dayCode]);
             }
 
-            // Parse time (format: "10:30" -> 10.5)
             const parseTime = (timeStr) => {
               if (!timeStr) return 0;
               const [hours, minutes] = timeStr.split(":").map(Number);
@@ -223,16 +274,14 @@ export const SearchBarBuilder = () => {
             const startHour = parseTime(schedule.startTime);
             const endHour = parseTime(schedule.endTime);
 
-            // Return array of slots for each day
             return days.map((day) => ({
               day,
               startHour,
               endHour,
             }));
           })
-          .filter((v) => v.length > 0); // Remove empty variations
+          .filter((v) => v.length > 0);
 
-        // Fallback if no valid variations found
         if (variations.length === 0) {
           variations.push([{ day: "Mon", startHour: 9, endHour: 10.5 }]);
         }
@@ -270,13 +319,11 @@ export const SearchBarBuilder = () => {
           description: outline.info?.description || "",
           breadth: outline.info?.designation || "N/A",
           units: outline.info?.units || "3",
-          variations: variations, // THIS IS THE KEY - add real variations
+          variations: variations,
           loading: false,
         };
 
         setSelectedCourse(enrichedCourse);
-
-        // Update the course in the courses list
         setCourses((prevCourses) =>
           prevCourses.map((c) =>
             c.title === course.title ? enrichedCourse : c
@@ -318,7 +365,6 @@ export const SearchBarBuilder = () => {
     }
   };
 
-  // Prevent drag and drop enrollment
   const handleDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "none";
@@ -326,7 +372,6 @@ export const SearchBarBuilder = () => {
 
   const handleDrop = (e) => {
     e.preventDefault();
-    // Do nothing - prevent enrollment via drag and drop
   };
 
   const campusOptions = ["Burnaby", "Surrey", "Online"];
@@ -416,6 +461,7 @@ export const SearchBarBuilder = () => {
       {showFilters && (
         <div className="mb-4 overflow-hidden">
           <div className="bg-blue-50 rounded-2xl p-4 space-y-4 max-h-96 overflow-y-auto">
+            {/* Filter content remains the same */}
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-gray-800">Filters</h4>
               <button onClick={() => setShowFilters(false)}>
@@ -655,14 +701,26 @@ export const SearchBarBuilder = () => {
                   </div>
 
                   <div
-                    className={`text-xs ${
+                    className={`flex items-center gap-1 text-xs ${
                       selectedCourse?.title === course.title
                         ? "text-blue-100"
                         : "text-gray-600"
                     }`}
                   >
-                    {course.friendsInCourse} friends
+                    <Users className="w-3 h-3" />
+                    <span>{course.friendsInCourse} friends</span>
                   </div>
+                </div>
+
+                <div
+                  className={`flex items-center gap-1 text-xs ${
+                    selectedCourse?.title === course.title
+                      ? "text-blue-100"
+                      : "text-gray-500"
+                  }`}
+                >
+                  <TrendingDown className="w-3 h-3" />
+                  <span>{course.dropPercent}% drop rate</span>
                 </div>
 
                 <div
@@ -734,9 +792,15 @@ export const SearchBarBuilder = () => {
               <Star className="w-4 h-4 text-blue-500 fill-blue-500" />
               <span className="text-xs">{selectedCourse.rating}</span>
             </div>
-            <div className="text-xs">
-              {selectedCourse.friendsInCourse} friends
+            <div className="flex items-center gap-1 text-xs">
+              <Users className="w-4 h-4 text-blue-500" />
+              <span>{selectedCourse.friendsInCourse} friends</span>
             </div>
+          </div>
+
+          <div className="flex items-center gap-1 text-sm text-gray-600 mb-3">
+            <TrendingDown className="w-4 h-4 text-blue-500" />
+            <span>{selectedCourse.dropPercent}% drop rate</span>
           </div>
 
           <div className="text-xs text-gray-600 mb-3 space-y-1">
