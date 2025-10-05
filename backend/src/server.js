@@ -17,7 +17,7 @@ app.use(
     credentials: false, // we are not using cookies
   })
 );
-app.options("/*", cors());
+
 
 
 // Handle preflight requests
