@@ -1,0 +1,55 @@
+{
+  "users": [
+    {
+      "username": "annu",
+      "email": "annu@example.com",
+      "password": "Passw0rd!",
+      "avatar": "https://i.pravatar.cc/60?img=12",
+      "major": "Computer Science"
+    },
+    {
+      "username": "prachi",
+      "email": "prachi@example.com",
+      "password": "Passw0rd!",
+      "avatar": "https://i.pravatar.cc/60?img=32",
+      "major": "Software Systems"
+    },
+    {
+      "username": "chris",
+      "email": "chris@example.com",
+      "password": "Passw0rd!",
+      "avatar": "https://i.pravatar.cc/60?img=45",
+      "major": "AI & Data Science"
+    }
+  ],
+  "courses": [
+    {
+      "code": "CMPT 310",
+      "title": "Artificial Intelligence",
+      "description": "Introduction to problem solving and AI techniques.",
+      "termsOffered": ["Spring", "Fall"],
+      "prereqs": ["CMPT 225", "MATH 154"]
+    },
+    {
+      "code": "CMPT 373",
+      "title": "Software Development Methods",
+      "description": "Project-centric course focusing on agile delivery.",
+      "termsOffered": ["Spring", "Summer", "Fall"],
+      "prereqs": ["CMPT 276"]
+    },
+    {
+      "code": "CMPT 295",
+      "title": "Introduction to Computer Systems",
+      "description": "Machine organization, assembly programming, performance.",
+      "termsOffered": ["Spring", "Fall"],
+      "prereqs": ["CMPT 125"]
+    },
+    {
+      "code": "CMPT 383",
+      "title": "Comparative Programming Languages",
+      "description": "Functional, logic, and scripting languages in practice.",
+      "termsOffered": ["Summer"],
+      "prereqs": ["CMPT 225"]
+    }
+  ]
+}

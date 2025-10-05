@@ -1,3 +1,5 @@
+import CommunityScreen from '../screens/Community.jsx';
+
 export default function Community() {
-  return <h1>Communityy Page</h1>;
+  return <CommunityScreen />;
 }
