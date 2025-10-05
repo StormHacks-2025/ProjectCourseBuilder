@@ -1,5 +1,11 @@
 import express from "express";
 import cors from "cors";
+import dotenv from "dotenv";
+import coursesRouter from "./routes/courses.js";
+
+
+
+
 import fileUpload from "express-fileupload";
 import { supabase } from "./db.js"; // Supabase client
 import { v4 as uuidv4 } from "uuid";
@@ -7,6 +13,11 @@ import pdfRoute from "./routes/pdfRoute.js"; // PDF routes
 
 import coursesRouter from "./routes/courseJa.js";
 import courseStatsRoutes from "./routes/courseStats.js";
+dotenv.config(); // loads .env
+console.log("Gemini API key loaded:", process.env.GEMINI_API_KEY ? "✅ Yes" : "❌ No");
+
+
+
 
 // Add this with your other route imports
 
@@ -245,10 +256,14 @@ app.get("/api/transcripts", async (req, res) => {
   }
 });
 
+// Mount the courses router
+app.use("/api", coursesRouter);
 // -------------------- PDF Routes --------------------
 app.use("/api/pdf", pdfRoute); // your PDF upload route
 
 // -------------------- Start Server --------------------
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
+
+
