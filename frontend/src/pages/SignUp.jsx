@@ -7,26 +7,39 @@ export default function SignUp() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleSignUp = (e) => {
+  const handleSignUp = async (e) => {
     e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:5000/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    // Get users from localStorage
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.message || "Signup failed");
+        return;
+      }
 
-    // Check if email exists
-    if (users.find((u) => u.email === email)) {
-      alert("Email already registered");
-      return;
+      // Save user to localStorage
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+      // Optionally fetch profile info or other user-specific data
+      const profileRes = await fetch("http://localhost:5000/api/profile", {
+        headers: { "x-user-email": data.user.email },
+      });
+      const profileData = await profileRes.json();
+
+      console.log("Profile info:", profileData.user);
+
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Signup failed. Please try again.");
+      console.error(err);
     }
-
-    // Create user
-    const user = { id: Date.now(), name, email, password };
-    users.push(user);
-    localStorage.setItem("users", JSON.stringify(users));
-    localStorage.setItem("currentUser", JSON.stringify(user));
-
-    navigate("/dashboard");
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

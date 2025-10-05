@@ -1,16 +1,39 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 
 export default function TranscriptDropdown() {
   const [files, setFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [notification, setNotification] = useState(""); // notification text
+  const [notification, setNotification] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [transcriptSet, setTranscriptSet] = useState(null);
+  const [majorInput, setMajorInput] = useState("");
+  const [photoInput, setPhotoInput] = useState("");
   const MAX_SIZE_MB = 5;
 
   useEffect(() => {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (user && user.email) {
+      axios
+        .get("/api/profile", { headers: { "x-user-email": user.email } })
+        .then((res) => {
+          setProfile(res.data.user);
+          setMajorInput(res.data.user.major || "");
+          setPhotoInput(res.data.user.profile_pic || "");
+        })
+        .catch(() => setProfile(null));
+
+      axios
+        .get(`/api/transcripts?email=${user.email}`)
+        .then((res) => setTranscriptSet(res.data.set))
+        .catch(() => setTranscriptSet(null));
+    }
+  }, []);
+
+  useEffect(() => {
     if (notification) {
-      const timer = setTimeout(() => setNotification(""), 3000); // hide after 3s
+      const timer = setTimeout(() => setNotification(""), 3000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
@@ -62,21 +85,59 @@ export default function TranscriptDropdown() {
     setUploading(true);
 
     try {
+      const user = JSON.parse(localStorage.getItem("currentUser"));
       const formData = new FormData();
       formData.append("pdf", files[0]);
 
       const res = await axios.post("/api/pdf/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "x-user-email": user?.email || "",
+        },
       });
 
       if (res.data.success) {
         setNotification("PDF uploaded successfully!");
+        axios
+          .get(`/api/transcripts?email=${user.email}`)
+          .then((res) => setTranscriptSet(res.data.set))
+          .catch(() => setTranscriptSet(null));
       }
     } catch (err) {
       console.error(err);
       setNotification("Failed to upload PDF.");
     } finally {
       setUploading(false);
+    }
+  }
+
+  async function handleMajorUpdate() {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (!majorInput || !user?.email) return;
+    try {
+      await axios.post("/api/profile/major", {
+        email: user.email,
+        major: majorInput,
+      });
+      setNotification("Major updated!");
+      setProfile((prev) => ({ ...prev, major: majorInput }));
+    } catch (err) {
+      setNotification("Failed to update major.");
+    }
+  }
+
+  async function handlePhotoUpdate() {
+    const user = JSON.parse(localStorage.getItem("currentUser"));
+    if (!photoInput || !user?.email) return;
+    try {
+      await axios.post("/api/profile/pic", {
+        email: user.email,
+        profile_pic: photoInput,
+      });
+      setNotification("Profile photo updated!");
+      setProfile((prev) => ({ ...prev, profile_pic: photoInput }));
+    } catch (err) {
+      setNotification("Failed to update photo.");
     }
   }
 
@@ -149,6 +210,64 @@ export default function TranscriptDropdown() {
               </li>
             ))}
           </ul>
+        )}
+        {/* Show profile info if available */}
+        {profile && (
+          <div className="mt-6">
+            <h3 className="font-semibold mb-2">Profile Info</h3>
+            <div className="flex items-center gap-3 mb-2">
+              <img
+                src={
+                  profile.profile_pic ||
+                  "https://ui-avatars.com/api/?name=User&background=cccccc&color=ffffff"
+                }
+                alt="Profile"
+                className="w-10 h-10 rounded-full border"
+              />
+              <span>{profile.name}</span>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="text"
+                value={photoInput}
+                onChange={(e) => setPhotoInput(e.target.value)}
+                placeholder="Profile pic URL"
+                className="border rounded px-2 py-1 text-sm"
+              />
+              <button
+                onClick={handlePhotoUpdate}
+                className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+              >
+                Update Photo
+              </button>
+            </div>
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="text"
+                value={majorInput}
+                onChange={(e) => setMajorInput(e.target.value)}
+                placeholder="Major"
+                className="border rounded px-2 py-1 text-sm"
+              />
+              <button
+                onClick={handleMajorUpdate}
+                className="px-2 py-1 bg-blue-500 text-white rounded text-sm"
+              >
+                Update Major
+              </button>
+            </div>
+            <div className="text-gray-700 text-sm mb-1">
+              <strong>Major:</strong> {profile.major || "Not set"}
+            </div>
+            <div className="text-gray-700 text-sm mb-1">
+              <strong>Transcript:</strong>{" "}
+              {transcriptSet === null
+                ? "Checking..."
+                : transcriptSet
+                ? "Set"
+                : "Not set"}
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -1,9 +1,22 @@
-import { parsePDF } from "../utils/pdfParser.js";
+import { parsePDF } from "../util/parser.js";
 import pool from "../db.js";
-import { computeAndStoreStudentGoodness } from "../utils/goodness.js";
+import { computeAndStoreStudentGoodness } from "../util/goodnress.js";
 
 export const uploadPDF = async (req, res) => {
   try {
+    // Get user email from header
+    const userEmail = req.headers["x-user-email"];
+    if (!userEmail) {
+      return res.status(400).json({ error: "Email required" });
+    }
+
+    // Find user ID
+    const userResult = await pool.query("SELECT id FROM users WHERE email = $1", [userEmail]);
+    if (!userResult.rows.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    const userId = userResult.rows[0].id;
+
     if (!req.files || !req.files.pdf) {
       return res.status(400).json({ error: "No PDF uploaded" });
     }
@@ -21,7 +34,7 @@ export const uploadPDF = async (req, res) => {
       `INSERT INTO transcripts (user_id, name) 
        VALUES ($1, $2) 
        RETURNING id`,
-      [req.user.id, `Transcript Upload ${new Date().toISOString()}`]
+      [userId, `Transcript Upload ${new Date().toISOString()}`]
     );
     const transcriptId = transcriptResult.rows[0].id;
 
@@ -57,7 +70,7 @@ export const uploadPDF = async (req, res) => {
     }
 
     // Calculate and store student goodness based on transcript
-    await computeAndStoreStudentGoodness(req.user.id);
+    await computeAndStoreStudentGoodness(userId);
 
     // Commit transaction
     await pool.query("COMMIT");

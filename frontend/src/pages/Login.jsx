@@ -6,19 +6,46 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const user = users.find((u) => u.email === email && u.password === password);
+    // Call backend to validate user and get profile info
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await response.json();
 
-    if (!user) {
-      alert("Invalid email or password");
-      return;
+      if (!response.ok) {
+        alert(data.message || "Invalid email or password");
+        return;
+      }
+
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+      // Fetch profile info (major, profile_pic, transcript status)
+      const profileRes = await fetch("http://localhost:5000/api/profile", {
+        headers: { "x-user-email": data.user.email },
+      });
+      const profileData = await profileRes.json();
+
+      // Fetch transcript status
+      const transcriptRes = await fetch(
+        `http://localhost:5000/api/transcripts?email=${data.user.email}`
+      );
+      const transcriptData = await transcriptRes.json();
+
+      // Log all info
+      console.log("Profile info:", profileData.user);
+      console.log("Transcript set:", transcriptData.set);
+
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Login failed. Please try again.");
+      console.error(err);
     }
-
-    localStorage.setItem("currentUser", JSON.stringify(user));
-    navigate("/dashboard");
   };
 
   return (
