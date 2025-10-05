@@ -8,7 +8,7 @@ import Dashboard from "./pages/Dashboard.jsx";
 import Builder from "./pages/Builder.jsx";
 import Community from "./pages/Community.jsx";
 import Settings from "./pages/Settings.jsx";
-import Pricing from "./pages/Pricing.jsx";
+import {Pricing} from "./pages/Pricing.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
