@@ -14,3 +14,7 @@ app.use("/api/pdf", pdfRoutes);
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+app.get("/profile", authenticate, (req, res) => {
+  res.json({ user: req.user });
+});
