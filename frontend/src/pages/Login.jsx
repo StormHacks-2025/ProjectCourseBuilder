@@ -9,9 +9,8 @@ export default function Login() {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Call backend to validate user and get profile info
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch("http://localhost:4000/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -26,20 +25,22 @@ export default function Login() {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       // Fetch profile info (major, profile_pic, transcript status)
-      const profileRes = await fetch("http://localhost:5000/api/profile", {
+      const profileRes = await fetch("http://localhost:4000/api/profile", {
         headers: { "x-user-email": data.user.email },
       });
       const profileData = await profileRes.json();
 
       // Fetch transcript status
       const transcriptRes = await fetch(
-        `http://localhost:5000/api/transcripts?email=${data.user.email}`
+        `http://localhost:4000/api/transcripts?email=${data.user.email}`
       );
       const transcriptData = await transcriptRes.json();
 
-      // Log all info
+      // Handle null safely
+      const transcriptSet = transcriptData?.set ?? false;
+
       console.log("Profile info:", profileData.user);
-      console.log("Transcript set:", transcriptData.set);
+      console.log("Transcript set:", transcriptSet);
 
       navigate("/dashboard");
     } catch (err) {
@@ -47,6 +48,7 @@ export default function Login() {
       console.error(err);
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

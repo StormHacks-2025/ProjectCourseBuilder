@@ -1,12 +1,13 @@
-import pkg from "pg";
 import dotenv from "dotenv";
-dotenv.config();
+dotenv.config(); // load .env first
 
-const { Pool } = pkg;
+import { createClient } from "@supabase/supabase-js";
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }, 
-});
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
 
-export default pool;
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("SUPABASE_URL and SUPABASE_KEY are required in .env");
+}
+
+export const supabase = createClient(supabaseUrl, supabaseKey);

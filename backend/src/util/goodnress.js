@@ -1,4 +1,4 @@
-import pool from "../db.js";
+import { supabase } from "../db.js"; // your Supabase client
 
 const gradePointsMap = {
   "A+": 4.3,
@@ -15,19 +15,27 @@ const gradePointsMap = {
 };
 
 export async function computeAndStoreStudentGoodness(userId) {
-  const res = await pool.query(
+  // 1️⃣ Fetch transcript courses
+  const { data: transcriptCourses, error: transcriptError } = await supabase
+    .from("transcript_courses")
+    .select(
+      `
+      semester,
+      grade,
+      units,
+      transcript_id,
+      course_code
     `
-    SELECT semester, grade, units
-    FROM transcript_courses tc
-    JOIN transcripts t ON tc.transcript_id = t.id
-    WHERE t.user_id = $1
-    ORDER BY semester ASC
-  `,
-    [userId]
-  );
+    )
+    .eq("transcript.user_id", userId)
+    .order("semester", { ascending: true })
+    .join("transcripts", "transcripts.id", "transcript_courses.transcript_id");
 
+  if (transcriptError) throw transcriptError;
+
+  // Group courses by semester
   const coursesBySemester = {};
-  res.rows.forEach((row) => {
+  transcriptCourses.forEach((row) => {
     if (!coursesBySemester[row.semester]) coursesBySemester[row.semester] = [];
     coursesBySemester[row.semester].push(row);
   });
@@ -49,18 +57,27 @@ export async function computeAndStoreStudentGoodness(userId) {
       const G = gradePointsMap[course.grade] || 0;
       const U = course.units || 3;
 
-      const ratingRes = await pool.query(
-        `
-        SELECT AVG(difficulty_rating) AS avgDifficulty, AVG(avg_hours) AS avgHours
-        FROM course_ratings cr
-        JOIN courses c ON cr.course_id = c.id
-        WHERE c.number = $1
-      `,
-        [course.course_code]
-      );
+      // 2️⃣ Fetch course ratings
+      const { data: ratingData, error: ratingError } = await supabase
+        .from("course_ratings")
+        .select("difficulty_rating, avg_hours")
+        .eq("course_id", course.course_code);
 
-      const D = parseFloat(ratingRes.rows[0].avgdifficulty) || 1;
-      const H = parseFloat(ratingRes.rows[0].avghours) || 10;
+      if (ratingError) throw ratingError;
+
+      let D = 1,
+        H = 10;
+      if (ratingData && ratingData.length) {
+        const avgDifficulty =
+          ratingData.reduce((sum, r) => sum + r.difficulty_rating, 0) /
+          ratingData.length;
+        const avgHours =
+          ratingData.reduce((sum, r) => sum + r.avg_hours, 0) /
+          ratingData.length;
+
+        D = avgDifficulty || 1;
+        H = avgHours || 10;
+      }
 
       let fH = 1;
       if (H < 5) fH = 0.9;
@@ -79,14 +96,13 @@ export async function computeAndStoreStudentGoodness(userId) {
 
   const goodnessScore = totalWeight ? totalWeightedScore / totalWeight : 0;
 
-  await pool.query(
-    `
-    UPDATE users
-    SET goodness_score = $1
-    WHERE id = $2
-  `,
-    [goodnessScore, userId]
-  );
+  // 3️⃣ Update user goodness_score
+  const { error: updateError } = await supabase
+    .from("users")
+    .update({ goodness_score: goodnessScore })
+    .eq("id", userId);
+
+  if (updateError) throw updateError;
 
   return goodnessScore;
 }

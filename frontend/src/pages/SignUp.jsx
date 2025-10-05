@@ -10,7 +10,7 @@ export default function SignUp() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/api/signup", {
+      const response = await fetch("http://localhost:4000/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
@@ -26,7 +26,7 @@ export default function SignUp() {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       // Optionally fetch profile info or other user-specific data
-      const profileRes = await fetch("http://localhost:5000/api/profile", {
+      const profileRes = await fetch("http://localhost:4000/api/profile", {
         headers: { "x-user-email": data.user.email },
       });
       const profileData = await profileRes.json();

@@ -1,12 +1,12 @@
 import express from "express";
 import cors from "cors";
 import fileUpload from "express-fileupload";
-import pool from "./db.js"; // your PostgreSQL connection
+import { supabase } from "./db.js"; // Supabase client
 import { v4 as uuidv4 } from "uuid";
 import pdfRoutes from "./routes/pdfRoute.js"; // PDF routes
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // -------------------- CORS --------------------
 app.use(
@@ -14,13 +14,9 @@ app.use(
     origin: "http://localhost:5173", // your frontend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "x-user-email", "Authorization"],
-    credentials: false, // we are not using cookies
+    credentials: false,
   })
 );
-
-
-
-// Handle preflight requests
 
 // -------------------- Middleware --------------------
 app.use(express.json());
@@ -36,18 +32,28 @@ app.post("/api/signup", async (req, res) => {
     return res.status(400).json({ message: "All fields required" });
 
   try {
-    const existing = await pool.query("SELECT id FROM users WHERE email=$1", [
-      email,
-    ]);
-    if (existing.rows.length)
+    const { data: existing, error: existingError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .limit(1);
+
+    if (existingError) throw existingError;
+    if (existing && existing.length > 0)
       return res.status(400).json({ message: "Email already registered" });
 
     const userId = uuidv4();
-    await pool.query(
-      `INSERT INTO users (id, name, email, password, created_at)
-       VALUES ($1, $2, $3, $4, NOW())`,
-      [userId, name, email, password]
-    );
+    const { error: insertError } = await supabase.from("users").insert([
+      {
+        id: userId,
+        name,
+        email,
+        password,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+    if (insertError) throw insertError;
 
     res.json({ user: { id: userId, name, email } });
   } catch (err) {
@@ -63,15 +69,18 @@ app.post("/api/login", async (req, res) => {
     return res.status(400).json({ message: "All fields required" });
 
   try {
-    const { rows } = await pool.query(
-      "SELECT id, name, email FROM users WHERE email=$1 AND password=$2",
-      [email, password]
-    );
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("id, name, email")
+      .eq("email", email)
+      .eq("password", password)
+      .limit(1);
 
-    if (!rows.length)
+    if (error) throw error;
+    if (!users || users.length === 0)
       return res.status(400).json({ message: "Invalid email or password" });
 
-    res.json({ user: rows[0] });
+    res.json({ user: users[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -84,14 +93,17 @@ app.get("/api/profile", async (req, res) => {
   if (!email) return res.status(400).json({ message: "Email required" });
 
   try {
-    const { rows } = await pool.query(
-      "SELECT id, name, email, major, profile_pic, paid FROM users WHERE email=$1",
-      [email]
-    );
-    if (!rows.length)
+    const { data: users, error } = await supabase
+      .from("users")
+      .select("id, name, email, major, profile_pic, paid")
+      .eq("email", email)
+      .limit(1);
+
+    if (error) throw error;
+    if (!users || users.length === 0)
       return res.status(404).json({ message: "User not found" });
 
-    res.json({ user: rows[0] });
+    res.json({ user: users[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
@@ -105,10 +117,12 @@ app.post("/api/profile/pic", async (req, res) => {
     return res.status(400).json({ message: "Email and profile_pic required" });
 
   try {
-    await pool.query("UPDATE users SET profile_pic=$1 WHERE email=$2", [
-      profile_pic,
-      email,
-    ]);
+    const { error } = await supabase
+      .from("users")
+      .update({ profile_pic })
+      .eq("email", email);
+
+    if (error) throw error;
     res.json({ success: true });
   } catch (err) {
     console.error(err);
@@ -123,16 +137,55 @@ app.post("/api/profile/major", async (req, res) => {
     return res.status(400).json({ message: "Email and major required" });
 
   try {
-    await pool.query("UPDATE users SET major=$1 WHERE email=$2", [
-      major,
-      email,
-    ]);
+    const { error } = await supabase
+      .from("users")
+      .update({ major })
+      .eq("email", email);
+
+    if (error) throw error;
     res.json({ success: true });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// GET /api/transcripts?email=user@example.com
+app.get("/api/transcripts", async (req, res) => {
+  const email = req.query.email;
+  if (!email) return res.status(400).json({ error: "Email required" });
+
+  try {
+    // 1. Get the user by email
+    const { data: users, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .limit(1);
+
+    if (userError) throw userError;
+    if (!users || users.length === 0)
+      return res.status(404).json({ error: "User not found" });
+
+    const userId = users[0].id;
+
+    // 2. Check if transcripts exist for this user
+    const { data: transcripts, error: transcriptsError } = await supabase
+      .from("transcripts")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    if (transcriptsError) throw transcriptsError;
+
+    // 3. Return JSON with boolean flag
+    res.json({ set: transcripts && transcripts.length > 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch transcripts" });
+  }
+});
+
 
 // -------------------- PDF Routes --------------------
 app.use("/api/pdf", pdfRoutes); // your PDF upload route
