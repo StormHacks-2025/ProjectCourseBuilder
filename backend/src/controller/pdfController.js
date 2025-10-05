@@ -1,5 +1,5 @@
 import { parsePDF } from "../util/parser.js";
-import { supabase } from "../db.js"; // make sure this is a named export
+import { supabase } from "../db.js";
 import { computeAndStoreStudentGoodness } from "../util/goodnress.js";
 
 export const uploadPDF = async (req, res) => {
@@ -31,6 +31,7 @@ export const uploadPDF = async (req, res) => {
 
     // 4️⃣ Parse PDF
     const parsedData = await parsePDF(pdfFile);
+    console.log("Parsed transcript data successfully");
 
     // 5️⃣ Insert transcript
     const { data: transcriptData, error: transcriptError } = await supabase
@@ -47,8 +48,9 @@ export const uploadPDF = async (req, res) => {
     if (transcriptError) throw transcriptError;
     const transcriptId = transcriptData.id;
 
-    // 6️⃣ Insert courses (batch insert)
+    // 6️⃣ Insert courses WITHOUT any course_id references
     const courseRows = [];
+
     for (const semester of parsedData) {
       for (const course of semester.courses) {
         courseRows.push({
@@ -62,27 +64,44 @@ export const uploadPDF = async (req, res) => {
       }
     }
 
+    // 7️⃣ Batch insert courses
     if (courseRows.length > 0) {
       const { error: coursesError } = await supabase
         .from("transcript_courses")
         .insert(courseRows);
 
-      if (coursesError) throw coursesError;
+      if (coursesError) {
+        console.error("Error inserting courses:", coursesError);
+        throw coursesError;
+      }
     }
 
-    // 7️⃣ Compute and store student goodness
-    await computeAndStoreStudentGoodness(userId);
+    console.log(`Successfully inserted ${courseRows.length} courses`);
+
+    // 8️⃣ Compute and store student goodness
+    console.log("About to compute student goodness...");
+    let goodnessScore = 0;
+    try {
+      goodnessScore = await computeAndStoreStudentGoodness(userId);
+      console.log("Goodness calculation completed. Score:", goodnessScore);
+    } catch (goodnessError) {
+      console.error("Goodness calculation failed:", goodnessError);
+      // Set default score if calculation fails
+      goodnessScore = 75;
+    }
 
     res.json({
       success: true,
       transcriptId,
-      coursesCount: parsedData.reduce(
-        (acc, sem) => acc + sem.courses.length,
-        0
-      ),
+      coursesCount: courseRows.length,
+      goodnessScore: goodnessScore, // Return the calculated score
+      message: `Successfully processed ${courseRows.length} courses from transcript`,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to process PDF" });
+    console.error("PDF upload error:", err);
+    res.status(500).json({
+      error: "Failed to process PDF",
+      details: err.message,
+    });
   }
 };

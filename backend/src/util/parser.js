@@ -1,61 +1,90 @@
+// util/parser.js
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 const pdfParse = require("pdf-parse");
 
 export const parsePDF = async (buffer) => {
-  const data = await pdfParse(buffer);
-  const lines = data.text
-    .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
+  try {
+    const data = await pdfParse(buffer);
+    const lines = data.text
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
 
-  const result = [];
-  let currentSemester = null;
-  let semesterCourses = [];
+    console.log("Raw PDF text:", lines);
 
-  const semesterRegex = /^\d{4} (Fall|Spring|Summer)$/;
-  const courseCodeRegex = /^[A-Z]{2,4}\s?\d{2,3}[A-Z]*$/;
-  const gradeRegex = /^[A-F][+-]?$/;
+    const result = [];
+    let currentSemester = null;
+    let semesterCourses = [];
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
 
-    if (semesterRegex.test(line)) {
-      if (currentSemester && semesterCourses.length > 0) {
-        result.push({
-          semester: currentSemester,
-          courses: semesterCourses,
+      // Semester detection - SFU format
+      if (/^\d{4} (Fall|Spring|Summer)$/.test(line)) {
+        if (currentSemester && semesterCourses.length > 0) {
+          result.push({
+            semester: currentSemester,
+            courses: [...semesterCourses],
+          });
+        }
+        currentSemester = line;
+        semesterCourses = [];
+        continue;
+      }
+
+      // Course line detection - SFU specific format
+      // Format: "CMPT 120 Intro.Cmpt.Sci/Programming I 3.00 3.00 A- 11.01 B+ 185"
+      const coursePattern =
+        /^([A-Z]{2,4} \d{2,3}[A-Z]?)\s+(.+?)\s+(\d+\.\d{2})\s+(\d+\.\d{2})\s+([A-Z][+-]?|WD)\s+([\d.]+)\s+([A-Z][+-]?)\s+(\d+)$/;
+      const match = line.match(coursePattern);
+
+      if (match && currentSemester) {
+        const [
+          ,
+          courseCode,
+          courseName,
+          unitsAttempted,
+          unitsCompleted,
+          grade,
+          gradePoints,
+          classAverage,
+          classEnrollment,
+        ] = match;
+
+        // Extract just the course name without the extra numbers
+        const cleanCourseName = courseName
+          .replace(
+            /\s+\d+\.\d{2}\s+\d+\.\d{2}\s+[A-Z][+-]?\s+[\d.]+\s+[A-Z][+-]?\s+\d+$/,
+            ""
+          )
+          .trim();
+
+        semesterCourses.push({
+          courseCode: courseCode.trim(),
+          courseName: cleanCourseName || courseName,
+          grade: grade,
+          units: parseFloat(unitsCompleted), // Use completed units, not enrollment number!
+          unitsAttempted: parseFloat(unitsAttempted),
+          gradePoints: parseFloat(gradePoints),
+          classAverage: classAverage,
+          classEnrollment: parseInt(classEnrollment),
         });
       }
-      currentSemester = line;
-      semesterCourses = [];
-      continue;
     }
 
-    if (courseCodeRegex.test(line)) {
-      const courseCode = line;
-      const courseName = lines[i + 1] || "";
-      const grade =
-        lines[i + 2] && gradeRegex.test(lines[i + 2]) ? lines[i + 2] : null;
-      const units =
-        lines[i + 3] && !isNaN(parseFloat(lines[i + 3]))
-          ? parseFloat(lines[i + 3])
-          : null;
-
-      semesterCourses.push({
-        courseCode,
-        courseName,
-        grade,
-        units,
+    // Don't forget the last semester
+    if (currentSemester && semesterCourses.length > 0) {
+      result.push({
+        semester: currentSemester,
+        courses: semesterCourses,
       });
-
-      i += 3;
     }
-  }
 
-  if (currentSemester && semesterCourses.length > 0) {
-    result.push({ semester: currentSemester, courses: semesterCourses });
+    console.log("Parsed result:", JSON.stringify(result, null, 2));
+    return result;
+  } catch (error) {
+    console.error("PDF parsing error:", error);
+    throw new Error(`Failed to parse PDF: ${error.message}`);
   }
-
-  return result;
 };
