@@ -5,6 +5,9 @@ import { supabase } from "./db.js"; // Supabase client
 import { v4 as uuidv4 } from "uuid";
 import pdfRoute from "./routes/pdfRoute.js"; // PDF routes
 
+import coursesRouter from "./routes/courseJa.js";
+;
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -25,6 +28,8 @@ app.use(fileUpload()); // for PDF uploads
 
 // -------------------- Routes --------------------
 
+
+app.use("/api/courses", coursesRouter);
 // Signup
 app.post("/api/signup", async (req, res) => {
   const { name, email, password } = req.body;
@@ -186,6 +191,57 @@ app.get("/api/transcripts", async (req, res) => {
   }
 });
 
+app.get("/api/profile", async (req, res) => {
+  const userEmail = req.headers["x-user-email"];
+  if (!userEmail) return res.status(400).json({ error: "Email required" });
+
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("*")
+    .eq("email", userEmail)
+    .limit(1)
+    .single();
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!users) return res.status(404).json({ error: "User not found" });
+
+  res.json({ user: users });
+});
+
+app.get("/api/transcripts", async (req, res) => {
+  const email = req.query.email;
+  if (!email) return res.status(400).json({ error: "Email required" });
+
+  try {
+    // 1️⃣ Find the user by email
+    const { data: users, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .limit(1);
+
+    if (userError) throw userError;
+    if (!users || users.length === 0)
+      return res.status(404).json({ error: "User not found" });
+
+    const userId = users[0].id;
+
+    // 2️⃣ Check if the user has transcripts
+    const { data: transcripts, error: transcriptsError } = await supabase
+      .from("transcripts")
+      .select("id")
+      .eq("user_id", userId)
+      .limit(1);
+
+    if (transcriptsError) throw transcriptsError;
+
+    // 3️⃣ Return boolean flag
+    res.json({ set: transcripts && transcripts.length > 0 });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch transcripts" });
+  }
+});
 
 // -------------------- PDF Routes --------------------
 app.use("/api/pdf", pdfRoute); // your PDF upload route
