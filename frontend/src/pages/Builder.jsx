@@ -1,7 +1,7 @@
 import { Slider } from "../component/slider.jsx";
 import { useState } from "react";
 import { SearchBarBuilder } from "../component/seachBarBuilder.jsx";
-import WeeklySchedule from "../component/WeeklySchedule.jsx";
+import WeeklySchedule from "../component/weeklySchedule.jsx";
 
 export default function Builder() {
   const [selectedCourses, setSelectedCourses] = useState([]);
