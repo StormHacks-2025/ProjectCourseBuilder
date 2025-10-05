@@ -1,3 +1,4 @@
+import { Slider } from "../component/slider.jsx";
 import { useState } from "react";
 import { SearchBarBuilder } from "../component/seachBarBuilder.jsx";
 import WeeklySchedule from "../component/WeeklySchedule.jsx";
@@ -28,6 +29,9 @@ export default function Builder() {
           setSelectedCourses={setSelectedCourses}
           setPinnedCourses={setPinnedCourses}
         />
+      </div>
+      <div>
+     <Slider></Slider> 
       </div>
     </div>
   );
