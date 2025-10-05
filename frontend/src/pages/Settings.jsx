@@ -1,12 +1,50 @@
-import React from "react";
+import React, { useState } from "react";
 import TranscriptDropdown from "../TranscriptDropdown";
 import SettingsProfile from "../settingsProfile";
-import { FaFilePdf } from "react-icons/fa"; // for PDF icon
+import { FaFilePdf } from "react-icons/fa";
 
-export default function Settings() {
-  const transcriptFiles = ["Transcript1.pdf", "Transcript2.pdf", "Transcript3.pdf"];
-  const degreeProgress = 0; // example progress
-  const totalUnits = 120;
+export default function Settings({ userEmail }) {
+  const transcriptFiles = [
+    "Transcript1.pdf",
+    "Transcript2.pdf",
+    "Transcript3.pdf",
+  ];
+
+  const [goodnessScore, setGoodnessScore] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [lastResponse, setLastResponse] = useState(null);
+
+  const handlePDFUpload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+
+    const formData = new FormData();
+    formData.append("pdf", file);
+
+    try {
+      const res = await fetch("/api/upload-pdf", {
+        method: "POST",
+        headers: { "x-user-email": userEmail },
+        body: formData,
+      });
+
+      const data = await res.json();
+      setLastResponse(data);
+
+      if (data.success) {
+        const displayScore = Number(data.goodnessScore ?? 0) * 100;
+        console.log("Setting Goodness Score:", displayScore);
+        setGoodnessScore(displayScore);
+      } else {
+        setGoodnessScore(50); // fallback
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      setGoodnessScore(25); // network error fallback
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white p-10">
@@ -19,51 +57,47 @@ export default function Settings() {
           </p>
         </div>
 
-        {/* Profile + Degree Progress with light purple-blue gradient */}
-        <div
-          className="p-6 rounded-2xl shadow-lg"
-          style={{
-            background: "linear-gradient(160deg, #f6f7ff, #e9ecff 65%, #f8f9ff 100%)",
-          }}
-        >
+        {/* Profile */}
+        <div className="p-6 rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 via-indigo-50 to-white">
           <SettingsProfile />
 
-          {/* Degree Progress */}
-          <div className="mt-6 flex flex-col items-center w-full">
-            <h2 className="text-xl font-bold mb-2 text-gray-900">Degree Progress</h2>
-            <p className="text-gray-700 mb-2">
-              {degreeProgress} / {totalUnits} units completed
-            </p>
-            <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-black"
-                style={{ width: `${(degreeProgress / totalUnits) * 100}%` }}
-              ></div>
+          {/* Goodness Score */}
+          <div className="mt-10 flex flex-col items-center">
+            
+            
+
+            {/* Optional debug info */}
+            {lastResponse && (
+              <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-center w-full">
+                Last response:{" "}
+                {lastResponse.success ? "✅ Success" : "❌ Failed"} <br />
+                Goodness: {lastResponse.goodnessScore} <br />
+                Courses processed: {lastResponse.coursesCount}
+              </div>
+            )}
+          </div>
+
+          {/* Transcript Upload */}
+          <div className="mt-10">
+            <div className="flex flex-col items-center mb-4 text-center gap-2">
+              <p className="text-gray-700 flex items-center gap-2">
+                <FaFilePdf className="text-red-500" />
+                Add your transcript to help us personalize your course
+                recommendations.
+              </p>
             </div>
-          </div>
-        </div>
 
-        {/* Transcript Section */}
-        <div>
-          <div className="flex flex-col items-center mb-4">
-            <p className="text-gray-700 mb-2 text-center flex items-center gap-2">
-              <FaFilePdf className="text-red-500" />
-              Add your transcript to help us personalize your course recommendations.
-            </p>
-          </div>
-
-          <div className="border border-gray-200 rounded-xl p-6 bg-gray-50">
-            <TranscriptDropdown files={transcriptFiles} showPdfIcon />
+            <div className="border border-gray-200 rounded-xl p-6 bg-gray-50">
+              <TranscriptDropdown
+                files={transcriptFiles}
+                showPdfIcon
+                onUpload={handlePDFUpload}
+                uploading={uploading}
+              />
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
-
-
-
-
-
-
-

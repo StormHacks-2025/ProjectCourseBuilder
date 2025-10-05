@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import './App.css';
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import App from "./App.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Builder from "./pages/Builder.jsx";
@@ -22,6 +22,7 @@ createRoot(document.getElementById("root")).render(
 
 
         <Route path="/" element={<App />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="builder" element={<Builder />} />
           <Route path="community" element={<Community />} />

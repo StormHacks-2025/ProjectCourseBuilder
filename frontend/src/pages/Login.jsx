@@ -1,67 +1,93 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import Profile from "../dashboard/Profile.jsx";
+import Schedule from "../dashboard/Schedule.jsx";
+import QuickActions from "../dashboard/QuickActions.jsx";
+import NotificationCenter from "../dashboard/NotificationCenter.jsx";
 
-export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const navigate = useNavigate();
+export default function Dashboard() {
+  const [user, setUser] = useState(null);
+  const [transcriptSet, setTranscriptSet] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        // Get the current user from localStorage
+        const storedUser = JSON.parse(localStorage.getItem("currentUser"));
+        if (!storedUser) {
+          // redirect if no user found
+          window.location.href = "/login";
+          return;
+        }
 
-    // Placeholder auth logic
-    if (email === "test@example.com" && password === "password") {
-      navigate("/dashboard");
-    } else {
-      alert("Invalid email or password");
-    }
-  };
+        setUser(storedUser);
+
+        // Fetch profile info
+        const profileRes = await fetch("http://localhost:4000/api/profile", {
+          headers: { "x-user-email": storedUser.email },
+        });
+        const profileData = await profileRes.json();
+
+        // Fetch transcript status
+        const transcriptRes = await fetch(
+          `http://localhost:4000/api/transcripts?email=${storedUser.email}`
+        );
+        const transcriptData = await transcriptRes.json();
+
+        setTranscriptSet(transcriptData?.set ?? false);
+      } catch (err) {
+        console.error("Failed to fetch user data:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  if (loading) return <p className="text-center mt-10">Loading dashboard...</p>;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="bg-white shadow-md rounded-2xl p-8 w-full max-w-md">
-        <h2 className="text-3xl font-semibold mb-6 text-center text-gray-800">
-          Welcome Back
-        </h2>
-        <p className="text-gray-500 text-center mb-8">
-          Log in to access your personalized course recommendations.
-        </p>
+    <div className="dashboard-page">
+      <header className="dashboard-page__header">
+        <div>
+          <h1 className="dashboard-page__title">Dashboard</h1>
+          <p className="dashboard-page__subtitle">
+            Welcome, {user?.name ?? "Student"}! Your current progress overview
+          </p>
+        </div>
 
-        <form onSubmit={handleLogin} className="flex flex-col gap-5">
-          <input
-            type="email"
-            placeholder="Email"
-            className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
+        <div className="flex flex-col items-end gap-2">
+          <form className="dashboard-search" role="search">
+            <span className="dashboard-search__icon" aria-hidden>
+              🔍
+            </span>
+            <input
+              type="search"
+              name="dashboard-search"
+              placeholder="Search"
+              aria-label="Search"
+            />
+          </form>
+        </div>
+      </header>
 
-          <input
-            type="password"
-            placeholder="Password"
-            className="border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+      <div className="dashboard-grid">
+        {/* Left column */}
+        <section className="dashboard-grid__main">
+          <Profile user={user} transcriptSet={transcriptSet} />
 
-          <button
-            type="submit"
-            className="bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition font-semibold"
-          >
-            Log In
-          </button>
-        </form>
+          <div className="dashboard-row">
+            <QuickActions user={user} />
+            <Schedule user={user} />
+          </div>
+        </section>
 
-        <p className="text-sm text-gray-600 text-center mt-6">
-          Don’t have an account?{" "}
-          <a href="/signup" className="text-blue-500 hover:underline">
-            Sign up
-          </a>
-        </p>
+        {/* Right column */}
+        <aside className="dashboard-grid__aside">
+          <NotificationCenter user={user} />
+        </aside>
       </div>
     </div>
   );
 }
-

@@ -1,79 +1,88 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 
-export default function Signup() {
+export default function SignUp() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
 
-  function handleSignup(e) {
+  const handleSignUp = async (e) => {
     e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:4000/api/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, password }),
+      });
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match!");
-      return;
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.message || "Signup failed");
+        return;
+      }
+
+      // Save user to localStorage
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+
+      // Optionally fetch profile info or other user-specific data
+      const profileRes = await fetch("http://localhost:4000/api/profile", {
+        headers: { "x-user-email": data.user.email },
+      });
+      const profileData = await profileRes.json();
+
+      console.log("Profile info:", profileData.user);
+
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Signup failed. Please try again.");
+      console.error(err);
     }
+  };
 
-    // Add real signup logic here (API call, Supabase, Firebase, etc.)
-    console.log("Signed up with:", email);
-    navigate("/login");
-  }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-50">
-      <div className="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-center mb-6">Create an Account</h1>
-
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div>
-            <label className="block text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 mb-1">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-gray-700 mb-1">Confirm Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="bg-white shadow-md rounded-2xl p-8 w-full max-w-md">
+        <h2 className="text-3xl font-semibold mb-6 text-center text-gray-800">
+          Create Account
+        </h2>
+        <form onSubmit={handleSignUp} className="flex flex-col gap-5">
+          <input
+            type="text"
+            placeholder="Name"
+            className="border border-gray-300 rounded-lg p-3"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            className="border border-gray-300 rounded-lg p-3"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className="border border-gray-300 rounded-lg p-3"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition"
+            className="bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 font-semibold"
           >
             Sign Up
           </button>
         </form>
-
-        <p className="text-center text-gray-600 mt-4">
+        <p className="text-center text-sm text-gray-500 mt-4">
           Already have an account?{" "}
           <Link to="/login" className="text-blue-500 hover:underline">
-            Log In
+            Log in
           </Link>
         </p>
       </div>
