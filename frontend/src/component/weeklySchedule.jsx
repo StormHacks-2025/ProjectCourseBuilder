@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import  { useState, useMemo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -11,7 +11,7 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { SortableItem } from "./SortableItem.jsx";
+import { SortableItem } from "./sortable.jsx";
 
 const hours = Array.from({ length: 10 }, (_, i) => 8 + i); // 8:00 - 17:00
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
