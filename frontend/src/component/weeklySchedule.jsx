@@ -1,127 +1,123 @@
-import  { useState, useMemo } from "react";
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { SortableItem } from "./sortable.jsx";
+import { useState, useMemo } from "react";
+import { motion } from "framer-motion";
 
-const hours = Array.from({ length: 10 }, (_, i) => 8 + i); // 8:00 - 17:00
+const hours = Array.from({ length: 10 }, (_, i) => 8 + i); // 8AM-17PM
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
-const WeeklySchedule = ({ fixedCourses = [], variableCourses = [] }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [courses, setCourses] = useState([
-    ...fixedCourses,
-    ...variableCourses.flat(),
-  ]);
+export default function WeeklySchedule({
+  fixedCourses = [],
+  variableCourses = [],
+}) {
+  const [variationIndexes, setVariationIndexes] = useState(
+    variableCourses.map(() => 0)
+  );
 
-  const currentCombination = useMemo(() => {
-    if (variableCourses.length === 0) return fixedCourses;
-    return variableCourses
-      .map((v) => v[currentIndex % v.length] || null)
-      .filter(Boolean)
-      .concat(fixedCourses);
-  }, [variableCourses, currentIndex, fixedCourses]);
+  // Merge fixed courses with current variations of variable courses
+  const currentEvents = useMemo(() => {
+    const variableEvents = variableCourses.map((course, i) => ({
+      ...course.variations[variationIndexes[i]],
+      title: course.title,
+    }));
+    return [...fixedCourses, ...variableEvents];
+  }, [fixedCourses, variableCourses, variationIndexes]);
 
-  const nextVariation = () => setCurrentIndex((i) => i + 1);
-  const prevVariation = () => setCurrentIndex((i) => i - 1);
+  const nextVariation = (courseIndex) => {
+    setVariationIndexes((prev) =>
+      prev.map((v, i) =>
+        i === courseIndex ? (v + 1) % variableCourses[i].variations.length : v
+      )
+    );
+  };
 
-  const sensors = useSensors(useSensor(PointerSensor));
-
-  const handleDragEnd = (event) => {
-    const { active, over } = event;
-    if (active.id !== over?.id) {
-      const oldIndex = courses.findIndex((c) => c.id === active.id);
-      const newIndex = courses.findIndex((c) => c.id === over.id);
-      setCourses((items) => arrayMove(items, oldIndex, newIndex));
-    }
+  const prevVariation = (courseIndex) => {
+    setVariationIndexes((prev) =>
+      prev.map((v, i) =>
+        i === courseIndex
+          ? (v - 1 + variableCourses[i].variations.length) %
+            variableCourses[i].variations.length
+          : v
+      )
+    );
   };
 
   return (
-    <div className="overflow-x-auto border border-gray-200 rounded-xl shadow-sm">
-      {/* Header */}
-      <div className="flex justify-between items-center p-4 bg-gray-50 border-b border-gray-200">
-        <button
-          onClick={prevVariation}
-          className="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
-        >
-          ⬅ Prev
-        </button>
-        <span className="font-semibold text-gray-700">
-          Variation {currentIndex + 1} / {variableCourses.length || 1}
-        </span>
-        <button
-          onClick={nextVariation}
-          className="px-3 py-1 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium"
-        >
-          Next ➡
-        </button>
+    <div className="p-4">
+      {/* Header with variation controls */}
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h2 className="text-xl font-semibold">Weekly Schedule</h2>
+        <div className="flex gap-2 flex-wrap">
+          {variableCourses.map((course, i) => (
+            <div key={i} className="flex items-center gap-1">
+              <span className="font-medium">{course.title}:</span>
+              <button
+                onClick={() => prevVariation(i)}
+                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                ⬅
+              </button>
+              <span className="text-sm">
+                {variationIndexes[i] + 1}/{course.variations.length}
+              </span>
+              <button
+                onClick={() => nextVariation(i)}
+                className="px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+              >
+                ➡
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Schedule Table */}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <table className="w-full border-collapse">
-          <thead>
-            <tr>
-              <th className="border border-gray-200 px-2 py-1 w-14 bg-gray-50">
-                Time
-              </th>
-              {days.map((day) => (
-                <th
-                  key={day}
-                  className="border border-gray-200 px-2 py-1 bg-gray-50"
-                >
-                  {day}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {hours.map((hour) => (
-              <tr key={hour} className="h-16">
-                <td className="border border-gray-200 px-2 py-1 text-sm font-medium bg-gray-50">
-                  {hour}:00
-                </td>
-                {days.map((day) => {
-                  const events = currentCombination.filter(
-                    (c) =>
-                      c.day === day && c.startHour <= hour && c.endHour > hour
-                  );
-                  return (
-                    <td
-                      key={day + hour}
-                      className="border border-gray-200 p-1 align-top"
-                    >
-                      <SortableContext
-                        items={events.map((e) => e.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        {events.map((event) => (
-                          <SortableItem key={event.id} {...event} />
-                        ))}
-                      </SortableContext>
-                    </td>
-                  );
-                })}
-              </tr>
+      <div className="overflow-x-auto border border-gray-300 rounded-lg p-2">
+        <div className="grid grid-cols-6 border-b border-gray-300">
+          <div className="border-r border-gray-300 px-2 py-1">Time</div>
+          {days.map((day) => (
+            <div
+              key={day}
+              className="border-r border-gray-300 px-2 py-1 text-center font-medium"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-6">
+          {/* Time column */}
+          <div className="flex flex-col border-r border-gray-300">
+            {hours.map((h) => (
+              <div key={h} className="h-14 border-b border-gray-200 px-1">
+                {h}:00
+              </div>
             ))}
-          </tbody>
-        </table>
-      </DndContext>
+          </div>
+
+          {/* Schedule grid */}
+          {days.map((day) => (
+            <div
+              key={day}
+              className="relative col-span-1 border-r border-gray-300"
+            >
+              {currentEvents
+                .filter((c) => c.day === day)
+                .map((course, idx) => (
+                  <motion.div
+                    key={idx}
+                    layout
+                    className="absolute left-1 right-1 bg-blue-500 text-white rounded-md p-1 text-sm shadow cursor-move"
+                    style={{
+                      top: (course.startHour - 8) * 56,
+                      height: (course.endHour - course.startHour) * 56,
+                    }}
+                  >
+                    {course.title}
+                  </motion.div>
+                ))}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
-};
-
-export default WeeklySchedule;
+}

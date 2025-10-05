@@ -1,32 +1,47 @@
-
-//import {SearchBarBuilder} from '../component/seachBarBuilder.jsx'
 import { Slider } from "../component/slider.jsx";
-import { SearchBarBuilder } from '../component/seachBarBuilder.jsx';
-import WeeklySchedule from '../component/weeklySchedule.jsx';
+import { SearchBarBuilder } from "../component/seachBarBuilder.jsx";
+import WeeklySchedule from "../component/WeeklySchedule.jsx";
 
 export default function Builder() {
-  // Courses that stay the same for all variations
   const fixedCourses = [
-    { title: 'Physics', day: 'Tue', startHour: 10, endHour: 12 },
-    { title: 'Chemistry', day: 'Wed', startHour: 14, endHour: 16 },
+    { id: "physics", title: "Physics", day: "Tue", startHour: 10, endHour: 12 },
+    { id: "chem", title: "Chemistry", day: "Wed", startHour: 14, endHour: 16 },
   ];
 
-  // Variations of a single course (e.g., different Math sections)
   const variableCourses = [
-    [ { title: 'Math A', day: 'Mon', startHour: 9, endHour: 11 } ],
-    [ { title: 'Math B', day: 'Mon', startHour: 11, endHour: 13 } ]
+    {
+      title: "Math",
+      variations: [
+        { day: "Mon", startHour: 9, endHour: 11 },
+        { day: "Mon", startHour: 11, endHour: 13 },
+      ],
+    },
+    {
+      title: "English",
+      variations: [
+        { day: "Tue", startHour: 10, endHour: 12 },
+        { day: "Wed", startHour: 14, endHour: 16 },
+      ],
+    },
   ];
+
 
   return (
-    <div style={{ display: 'flex', gap: '20px', padding: '20px' }}>
-      <div style={{ flex: 1 }}>
+    <div className="flex flex-col md:flex-row gap-6 p-6">
+      <div className="flex-1">
         <SearchBarBuilder />
       </div>
 
-      <div style={{ flex: 2 }}>
-        <WeeklySchedule fixedCourses={fixedCourses} variableCourses={variableCourses} />
+      <div className="flex-2">
+        <WeeklySchedule
+          fixedCourses={fixedCourses}
+          variableCourses={variableCourses}
+        />
       </div>
-          <Slider></Slider>
+
+      <div className="hidden md:block">
+        <Slider />
+      </div>
     </div>
   );
 }
