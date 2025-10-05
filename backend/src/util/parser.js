@@ -1,4 +1,6 @@
-import * as pdfParse from "pdf-parse";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
 
 export const parsePDF = async (buffer) => {
   const data = await pdfParse(buffer);
@@ -18,7 +20,6 @@ export const parsePDF = async (buffer) => {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
-    // Detect semester
     if (semesterRegex.test(line)) {
       if (currentSemester && semesterCourses.length > 0) {
         result.push({
@@ -31,7 +32,6 @@ export const parsePDF = async (buffer) => {
       continue;
     }
 
-    // Detect course code
     if (courseCodeRegex.test(line)) {
       const courseCode = line;
       const courseName = lines[i + 1] || "";
@@ -50,7 +50,6 @@ export const parsePDF = async (buffer) => {
       });
 
       i += 3;
-      continue;
     }
   }
 

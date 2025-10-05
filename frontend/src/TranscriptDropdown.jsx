@@ -89,6 +89,7 @@ export default function TranscriptDropdown() {
       const formData = new FormData();
       formData.append("pdf", files[0]);
 
+      // Call your existing uploadPDF route
       const res = await axios.post("/api/pdf/upload", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -97,11 +98,29 @@ export default function TranscriptDropdown() {
       });
 
       if (res.data.success) {
-        setNotification("PDF uploaded successfully!");
-        axios
-          .get(`/api/transcripts?email=${user.email}`)
-          .then((res) => setTranscriptSet(res.data.set))
-          .catch(() => setTranscriptSet(null));
+        setNotification(
+          `PDF uploaded successfully! ${res.data.coursesCount} courses saved.`
+        );
+
+        // Update transcript set state
+        const transcriptRes = await axios.get(
+          `/api/transcripts?email=${user.email}`
+        );
+        setTranscriptSet(transcriptRes.data.set);
+
+        // Update profile picture if not set
+        const defaultPic =
+          "https://ui-avatars.com/api/?name=User&background=cccccc&color=ffffff";
+        if (!profile?.profile_pic) {
+          const photoRes = await axios.post("/api/profile/pic", {
+            email: user.email,
+            profile_pic: defaultPic,
+          });
+
+          if (photoRes.data.success) {
+            setProfile((prev) => ({ ...prev, profile_pic: defaultPic }));
+          }
+        }
       }
     } catch (err) {
       console.error(err);
@@ -110,6 +129,8 @@ export default function TranscriptDropdown() {
       setUploading(false);
     }
   }
+
+
 
   async function handleMajorUpdate() {
     const user = JSON.parse(localStorage.getItem("currentUser"));

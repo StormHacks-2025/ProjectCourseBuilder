@@ -15,7 +15,7 @@ const gradePointsMap = {
 };
 
 export async function computeAndStoreStudentGoodness(userId) {
-  // 1️⃣ Fetch transcript courses
+  // 1️⃣ Fetch transcript courses + linked transcript info
   const { data: transcriptCourses, error: transcriptError } = await supabase
     .from("transcript_courses")
     .select(
@@ -23,29 +23,29 @@ export async function computeAndStoreStudentGoodness(userId) {
       semester,
       grade,
       units,
-      transcript_id,
-      course_code
+      course_code,
+      transcripts!inner(user_id)
     `
     )
-    .eq("transcript.user_id", userId)
-    .order("semester", { ascending: true })
-    .join("transcripts", "transcripts.id", "transcript_courses.transcript_id");
+    .eq("transcripts.user_id", userId)
+    .order("semester", { ascending: true });
 
   if (transcriptError) throw transcriptError;
+  if (!transcriptCourses?.length) return 0;
 
   // Group courses by semester
   const coursesBySemester = {};
-  transcriptCourses.forEach((row) => {
+  for (const row of transcriptCourses) {
     if (!coursesBySemester[row.semester]) coursesBySemester[row.semester] = [];
     coursesBySemester[row.semester].push(row);
-  });
+  }
 
   const semesterKeys = Object.keys(coursesBySemester);
   const totalSemesters = semesterKeys.length;
   let totalWeightedScore = 0;
   let totalWeight = 0;
 
-  for (let i = 0; i < semesterKeys.length; i++) {
+  for (let i = 0; i < totalSemesters; i++) {
     const semester = semesterKeys[i];
     const weight = (i + 1) / totalSemesters;
     const courses = coursesBySemester[semester];
@@ -67,12 +67,12 @@ export async function computeAndStoreStudentGoodness(userId) {
 
       let D = 1,
         H = 10;
-      if (ratingData && ratingData.length) {
+      if (ratingData?.length) {
         const avgDifficulty =
-          ratingData.reduce((sum, r) => sum + r.difficulty_rating, 0) /
+          ratingData.reduce((sum, r) => sum + (r.difficulty_rating || 0), 0) /
           ratingData.length;
         const avgHours =
-          ratingData.reduce((sum, r) => sum + r.avg_hours, 0) /
+          ratingData.reduce((sum, r) => sum + (r.avg_hours || 0), 0) /
           ratingData.length;
 
         D = avgDifficulty || 1;
@@ -90,6 +90,7 @@ export async function computeAndStoreStudentGoodness(userId) {
     const semesterScore = semesterUnitsSum
       ? semesterScoreSum / semesterUnitsSum
       : 0;
+
     totalWeightedScore += semesterScore * weight;
     totalWeight += weight;
   }

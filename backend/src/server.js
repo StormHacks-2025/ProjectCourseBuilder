@@ -3,7 +3,7 @@ import cors from "cors";
 import fileUpload from "express-fileupload";
 import { supabase } from "./db.js"; // Supabase client
 import { v4 as uuidv4 } from "uuid";
-import pdfRoutes from "./routes/pdfRoute.js"; // PDF routes
+import pdfRoute from "./routes/pdfRoute.js"; // PDF routes
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -188,7 +188,7 @@ app.get("/api/transcripts", async (req, res) => {
 
 
 // -------------------- PDF Routes --------------------
-app.use("/api/pdf", pdfRoutes); // your PDF upload route
+app.use("/api/pdf", pdfRoute); // your PDF upload route
 
 // -------------------- Start Server --------------------
 app.listen(PORT, () => {
