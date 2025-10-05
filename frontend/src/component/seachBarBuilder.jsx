@@ -14,7 +14,7 @@ import {
 
 const API_BASE = "http://localhost:4000/api";
 
-export const SearchBarBuilder=()=> {
+export const SearchBarBuilder = () => {
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [pinnedCourses, setPinnedCourses] = useState([]);
   const [search, setSearch] = useState("");
@@ -36,74 +36,75 @@ export const SearchBarBuilder=()=> {
   });
 
   useEffect(() => {
-  const fetchCourses = async () => {
-    if (!search || search.length < 2) {
-      setCourses([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Provide safe defaults for year and term
-      const currentYear = year || "current";
-      const currentTerm = term || "current";
-
-      const response = await fetch(
-        `${API_BASE}/courses/search/${currentYear}/${currentTerm}?q=${encodeURIComponent(search)}`
-      );
-
-      if (!response.ok) {
-        console.error(`Fetch failed with status: ${response.status}`);
+    const fetchCourses = async () => {
+      if (!search || search.length < 2) {
         setCourses([]);
         return;
       }
 
-      const data = await response.json();
+      setLoading(true);
+      try {
+        // Provide safe defaults for year and term
+        const currentYear = year || "current";
+        const currentTerm = term || "current";
 
-      const transformed = data.map((course) => ({
-        title: `${course.department?.toUpperCase()} ${course.value}`,
-        fullTitle: course.title,
-        level:
-          course.value >= 400
-            ? "Advanced"
-            : course.value >= 200
-            ? "Intermediate"
-            : "Beginner",
-        department: course.department,
-        courseNumber: course.value,
-        days: ["Mon", "Wed"], // Placeholder
-        hours: "TBD",
-        prof: "TBD",
-        rating: 4.5,
-        prereqs: [],
-        campus: "Burnaby",
-        year:
-          course.value >= 400
-            ? "4th Year"
-            : course.value >= 300
-            ? "3rd Year"
-            : course.value >= 200
-            ? "2nd Year"
-            : "1st Year",
-        breadth: "B-Sci",
-        friendsInCourse: 0,
-        variations: [],
-      }));
+        const response = await fetch(
+          `${API_BASE}/courses/search/${currentYear}/${currentTerm}?q=${encodeURIComponent(
+            search
+          )}`
+        );
 
-      setCourses(transformed);
-    } catch (err) {
-      console.error("Error fetching courses:", err);
-      setCourses([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (!response.ok) {
+          console.error(`Fetch failed with status: ${response.status}`);
+          setCourses([]);
+          return;
+        }
 
-  const debounce = setTimeout(fetchCourses, 300);
+        const data = await response.json();
 
-  return () => clearTimeout(debounce);
-}, [search, year, term]);
+        const transformed = data.map((course) => ({
+          title: `${course.department?.toUpperCase()} ${course.value}`,
+          fullTitle: course.title,
+          level:
+            course.value >= 400
+              ? "Advanced"
+              : course.value >= 200
+              ? "Intermediate"
+              : "Beginner",
+          department: course.department,
+          courseNumber: course.value,
+          days: ["Mon", "Wed"], // Placeholder
+          hours: "TBD",
+          prof: "TBD",
+          rating: 4.5,
+          prereqs: [],
+          campus: "Burnaby",
+          year:
+            course.value >= 400
+              ? "4th Year"
+              : course.value >= 300
+              ? "3rd Year"
+              : course.value >= 200
+              ? "2nd Year"
+              : "1st Year",
+          breadth: "B-Sci",
+          friendsInCourse: 0,
+          variations: [],
+        }));
 
+        setCourses(transformed);
+      } catch (err) {
+        console.error("Error fetching courses:", err);
+        setCourses([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchCourses, 300);
+
+    return () => clearTimeout(debounce);
+  }, [search, year, term]);
 
   const toggleFilter = (category, value) => {
     setFilters((prev) => {
@@ -159,90 +160,136 @@ export const SearchBarBuilder=()=> {
     return result;
   };
 
-  const filteredCourses = getFilteredAndSortedCourses();
+  const filteredCourses = getFilteredAndSortedCourses().slice(0, 4); // Limit to 4 courses
 
- const handleSelect = async (course) => {
-   setSelectedCourse({ ...course, loading: true });
+  const handleSelect = async (course) => {
+    setSelectedCourse({ ...course, loading: true });
 
-   try {
-     // First get sections
-     const sectionsResponse = await fetch(
-       `${API_BASE}/courses/sections/${year}/${term}/${course.department}/${course.courseNumber}`
-     );
+    try {
+      const sectionsResponse = await fetch(
+        `${API_BASE}/courses/sections/${year}/${term}/${course.department}/${course.courseNumber}`
+      );
 
-     if (!sectionsResponse.ok) {
-       setSelectedCourse(course);
-       return;
-     }
+      if (!sectionsResponse.ok) {
+        setSelectedCourse(course);
+        return;
+      }
 
-     const sections = await sectionsResponse.json();
-     const enrollmentSections = sections.filter((s) => s.classType === "e");
+      const sections = await sectionsResponse.json();
+      const enrollmentSections = sections.filter((s) => s.classType === "e");
 
-     if (enrollmentSections.length === 0) {
-       setSelectedCourse({ ...course, sections });
-       return;
-     }
+      if (enrollmentSections.length === 0) {
+        setSelectedCourse({ ...course, sections });
+        return;
+      }
 
-     // Fetch outline for first section only
-     const firstSection = enrollmentSections[0];
-     const outlineResponse = await fetch(
-       `${API_BASE}/courses/outline/${year}/${term}/${course.department}/${course.courseNumber}/${firstSection.value}`
-     );
+      // Fetch outline for first section to get schedule details
+      const firstSection = enrollmentSections[0];
+      const outlineResponse = await fetch(
+        `${API_BASE}/courses/outline/${year}/${term}/${course.department}/${course.courseNumber}/${firstSection.value}`
+      );
 
-     if (outlineResponse.ok) {
-       const outline = await outlineResponse.json();
+      if (outlineResponse.ok) {
+        const outline = await outlineResponse.json();
 
-       const instructor = outline.instructor?.[0];
-       const schedule = outline.courseSchedule?.[0];
+        const instructor = outline.instructor?.[0];
+        const schedules = outline.courseSchedule || [];
 
-       // Parse days from schedule (comes as "MoWeFr" format)
-       const daysMap = {
-         Mo: "Mon",
-         Tu: "Tue",
-         We: "Wed",
-         Th: "Thu",
-         Fr: "Fri",
-       };
-       const daysString = schedule?.days || "";
-       const days = [];
-       for (let i = 0; i < daysString.length; i += 2) {
-         const dayCode = daysString.substr(i, 2);
-         if (daysMap[dayCode]) days.push(daysMap[dayCode]);
-       }
+        // Convert schedule data to variations format
+        const variations = schedules
+          .map((schedule) => {
+            const daysMap = {
+              Mo: "Mon",
+              Tu: "Tue",
+              We: "Wed",
+              Th: "Thu",
+              Fr: "Fri",
+            };
+            const daysString = schedule.days || "";
+            const days = [];
 
-       const enrichedCourse = {
-         ...course,
-         sections: enrollmentSections,
-         prof: instructor?.name || "TBD",
-         days: days.length > 0 ? days : ["TBD"],
-         hours:
-           schedule?.startTime && schedule?.endTime
-             ? `${schedule.startTime} - ${schedule.endTime}`
-             : "TBD",
-         campus: schedule?.campus || "TBD",
-         prereqs: outline.info?.prerequisites
-           ? [outline.info.prerequisites]
-           : [],
-         description: outline.info?.description || "",
-         breadth: outline.info?.designation || "N/A",
-         units: outline.info?.units || "3",
-         loading: false,
-       };
+            for (let i = 0; i < daysString.length; i += 2) {
+              const dayCode = daysString.substr(i, 2);
+              if (daysMap[dayCode]) days.push(daysMap[dayCode]);
+            }
 
-       setSelectedCourse(enrichedCourse);
+            // Parse time (format: "10:30" -> 10.5)
+            const parseTime = (timeStr) => {
+              if (!timeStr) return 0;
+              const [hours, minutes] = timeStr.split(":").map(Number);
+              return hours + minutes / 60;
+            };
 
-       // Update the course in the courses list so it shows correct data next time
-       setCourses((prevCourses) =>
-         prevCourses.map((c) => (c.title === course.title ? enrichedCourse : c))
-       );
-     } else {
-       setSelectedCourse({ ...course, sections, loading: false });
-     }
-   } catch (err) {
-     console.error("Error fetching course details:", err);
-     setSelectedCourse({ ...course, loading: false });
-   }
- };
+            const startHour = parseTime(schedule.startTime);
+            const endHour = parseTime(schedule.endTime);
+
+            // Return array of slots for each day
+            return days.map((day) => ({
+              day,
+              startHour,
+              endHour,
+            }));
+          })
+          .filter((v) => v.length > 0); // Remove empty variations
+
+        // Fallback if no valid variations found
+        if (variations.length === 0) {
+          variations.push([{ day: "Mon", startHour: 9, endHour: 10.5 }]);
+        }
+
+        const enrichedCourse = {
+          ...course,
+          sections: enrollmentSections,
+          prof: instructor?.name || "TBD",
+          days: schedules[0]?.days
+            ? (() => {
+                const daysMap = {
+                  Mo: "Mon",
+                  Tu: "Tue",
+                  We: "Wed",
+                  Th: "Thu",
+                  Fr: "Fri",
+                };
+                const daysString = schedules[0].days;
+                const days = [];
+                for (let i = 0; i < daysString.length; i += 2) {
+                  const dayCode = daysString.substr(i, 2);
+                  if (daysMap[dayCode]) days.push(daysMap[dayCode]);
+                }
+                return days;
+              })()
+            : ["TBD"],
+          hours:
+            schedules[0]?.startTime && schedules[0]?.endTime
+              ? `${schedules[0].startTime} - ${schedules[0].endTime}`
+              : "TBD",
+          campus: schedules[0]?.campus || "TBD",
+          prereqs: outline.info?.prerequisites
+            ? [outline.info.prerequisites]
+            : [],
+          description: outline.info?.description || "",
+          breadth: outline.info?.designation || "N/A",
+          units: outline.info?.units || "3",
+          variations: variations, // THIS IS THE KEY - add real variations
+          loading: false,
+        };
+
+        setSelectedCourse(enrichedCourse);
+
+        // Update the course in the courses list
+        setCourses((prevCourses) =>
+          prevCourses.map((c) =>
+            c.title === course.title ? enrichedCourse : c
+          )
+        );
+      } else {
+        setSelectedCourse({ ...course, sections, loading: false });
+      }
+    } catch (err) {
+      console.error("Error fetching course details:", err);
+      setSelectedCourse({ ...course, loading: false });
+    }
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && filteredCourses.length > 0)
@@ -271,6 +318,17 @@ export const SearchBarBuilder=()=> {
     }
   };
 
+  // Prevent drag and drop enrollment
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "none";
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    // Do nothing - prevent enrollment via drag and drop
+  };
+
   const campusOptions = ["Burnaby", "Surrey", "Online"];
   const daysOptions = ["Mon", "Tue", "Wed", "Thu", "Fri"];
   const hoursOptions = [
@@ -285,7 +343,11 @@ export const SearchBarBuilder=()=> {
   const breadthOptions = ["B-Hum", "B-Sci", "B-Soc"];
 
   return (
-    <div className="relative w-full min-h-screen p-6 bg-white shadow-xl flex flex-col rounded-3xl">
+    <div
+      className="relative w-full min-h-screen p-6 bg-white shadow-xl flex flex-col rounded-3xl"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
       <div className="relative mb-4 flex gap-2">
         <div className="relative flex-1">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-400" />
@@ -724,4 +786,4 @@ export const SearchBarBuilder=()=> {
       )}
     </div>
   );
-}
+};

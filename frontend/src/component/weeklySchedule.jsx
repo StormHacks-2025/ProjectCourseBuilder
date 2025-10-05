@@ -49,19 +49,34 @@ export default function WeeklySchedule({
     if (courses.length === 0) return [[]];
 
     const [first, ...rest] = courses;
+
+    // Check if course has valid variations
+    if (!first.variations || first.variations.length === 0) {
+      console.warn(`Course ${first.title} has no valid variations`);
+      return []; // Return empty if no variations
+    }
+
     const restSchedules = generateSchedules(rest, pinnedSlots);
     const result = [];
 
     for (let variation of first.variations) {
+      // Skip invalid variations
+      if (!variation || variation.length === 0) continue;
+
       const conflictsWithPinned = hasConflict(variation, pinnedSlots);
       if (conflictsWithPinned) continue;
 
-      for (let restSchedule of restSchedules) {
-        const allSlotsInRest = restSchedule.flat();
-        const conflictsWithRest = hasConflict(variation, allSlotsInRest);
+      if (restSchedules.length === 0) {
+        // Base case: if no more courses, just add this variation
+        result.push([variation]);
+      } else {
+        for (let restSchedule of restSchedules) {
+          const allSlotsInRest = restSchedule.flat();
+          const conflictsWithRest = hasConflict(variation, allSlotsInRest);
 
-        if (!conflictsWithRest) {
-          result.push([variation, ...restSchedule]);
+          if (!conflictsWithRest) {
+            result.push([variation, ...restSchedule]);
+          }
         }
       }
     }
@@ -71,9 +86,19 @@ export default function WeeklySchedule({
 
   useEffect(() => {
     const pinnedSlots = pinnedCourses.flatMap(
-      (c) => c.currentSlots || c.variations[0]
+      (c) => c.currentSlots || c.variations?.[0] || []
     );
-    const schedules = generateSchedules(variableCourses, pinnedSlots);
+
+    // Filter out courses without valid variations
+    const validVariableCourses = variableCourses.filter(
+      (c) => c.variations && c.variations.length > 0
+    );
+
+    if (validVariableCourses.length < variableCourses.length) {
+      console.warn("Some courses are missing variation data");
+    }
+
+    const schedules = generateSchedules(validVariableCourses, pinnedSlots);
     setAllSchedules(schedules);
     setCurrentScheduleIndex(0);
 
@@ -83,7 +108,7 @@ export default function WeeklySchedule({
 
   const currentEvents = useMemo(() => {
     const pinnedEvents = pinnedCourses.flatMap((course) =>
-      (course.currentSlots || course.variations[0]).map((slot) => ({
+      (course.currentSlots || course.variations?.[0] || []).map((slot) => ({
         ...slot,
         title: course.title,
         isPinned: true,
@@ -172,10 +197,23 @@ export default function WeeklySchedule({
 
     try {
       const course = JSON.parse(courseData);
-      if (selectedCourses.find((c) => c.title === course.title)) return;
+
+      // Check if already enrolled
+      if (selectedCourses.find((c) => c.title === course.title)) {
+        alert(`${course.title} is already enrolled`);
+        return;
+      }
+
+      // Check if course has valid variations
+      if (!course.variations || course.variations.length === 0) {
+        alert(
+          `${course.title} doesn't have schedule data yet. Please click on it first to load the schedule information.`
+        );
+        return;
+      }
 
       const pinnedSlots = pinnedCourses.flatMap(
-        (c) => c.currentSlots || c.variations[0]
+        (c) => c.currentSlots || c.variations?.[0] || []
       );
       const existingSlots = currentEvents.map((e) => ({
         day: e.day,
@@ -183,22 +221,29 @@ export default function WeeklySchedule({
         endHour: e.endHour,
       }));
 
+      // Check if any variation works
+      let hasValidVariation = false;
       for (let variation of course.variations) {
         const conflicts = hasConflict(variation, [
           ...pinnedSlots,
           ...existingSlots,
         ]);
         if (!conflicts) {
-          setSelectedCourses([...selectedCourses, course]);
-          return;
+          hasValidVariation = true;
+          break;
         }
       }
 
-      alert(
-        `Cannot add ${course.title} - all time slots conflict with existing courses`
-      );
+      if (hasValidVariation) {
+        setSelectedCourses([...selectedCourses, course]);
+      } else {
+        alert(
+          `Cannot add ${course.title} - all time slots conflict with existing courses`
+        );
+      }
     } catch (err) {
       console.error("Drop error:", err);
+      alert("Error adding course. Please try again.");
     }
   };
 
@@ -331,7 +376,14 @@ export default function WeeklySchedule({
                       <div className="flex flex-col h-full justify-center">
                         <div className="font-bold">{course.title}</div>
                         <div className="text-xs opacity-90">
-                          {course.startHour}:00 - {course.endHour}:00
+                          {Math.floor(course.startHour)}:
+                          {String(
+                            Math.round((course.startHour % 1) * 60)
+                          ).padStart(2, "0")}{" "}
+                          - {Math.floor(course.endHour)}:
+                          {String(
+                            Math.round((course.endHour % 1) * 60)
+                          ).padStart(2, "0")}
                         </div>
                       </div>
                     </motion.div>
@@ -360,6 +412,7 @@ export default function WeeklySchedule({
         </div>
       )}
 
+      {/* Rest of modals remain the same... */}
       <AnimatePresence>
         {showClearConfirm && (
           <motion.div
@@ -384,22 +437,18 @@ export default function WeeklySchedule({
                 cannot be undone.
               </p>
               <div className="flex gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => setShowClearConfirm(false)}
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
                 >
                   Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={handleClear}
                   className="flex-1 px-4 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors"
                 >
                   Clear All
-                </motion.button>
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -428,9 +477,7 @@ export default function WeeklySchedule({
                 loading another?
               </p>
               <div className="flex gap-3">
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => {
                     setShowSaveConfirm(false);
                     setScheduleToLoad(null);
@@ -438,18 +485,14 @@ export default function WeeklySchedule({
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
                 >
                   Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={() => loadSchedule(scheduleToLoad)}
                   className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
                 >
                   Don't Save
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                </button>
+                <button
                   onClick={() => {
                     handleSaveSchedule();
                     loadSchedule(scheduleToLoad);
@@ -457,7 +500,7 @@ export default function WeeklySchedule({
                   className="flex-1 px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-colors"
                 >
                   Save & Load
-                </motion.button>
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -482,14 +525,12 @@ export default function WeeklySchedule({
                 <h3 className="text-2xl font-bold text-gray-800">
                   Saved Schedules
                 </h3>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                <button
                   onClick={() => setShowSavedSchedules(false)}
                   className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                 >
                   <X className="w-6 h-6" />
-                </motion.button>
+                </button>
               </div>
 
               {savedSchedules.length === 0 ? (
@@ -499,9 +540,8 @@ export default function WeeklySchedule({
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {savedSchedules.map((schedule) => (
-                    <motion.div
+                    <div
                       key={schedule.id}
-                      whileHover={{ scale: 1.02 }}
                       className="p-4 border-2 border-gray-200 rounded-xl hover:border-blue-400 transition-colors cursor-pointer"
                       onClick={() => handleLoadSchedule(schedule)}
                     >
@@ -531,7 +571,7 @@ export default function WeeklySchedule({
                           )}
                         </div>
                       </div>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               )}
