@@ -43,7 +43,7 @@ export default function SettingsProfile() {
           />
           <label
             htmlFor="profilePicInput"
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors"
+            className="mt-4 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 cursor-pointer transition-colors"
           >
             Upload Picture
           </label>
@@ -51,7 +51,7 @@ export default function SettingsProfile() {
 
         {/* Profile info */}
         <div className="flex-1 flex flex-col gap-6 w-full">
-          {/* Modern Major selection */}
+          {/* Major selection */}
           <div className="flex flex-col">
             <label className="mb-2 font-semibold text-gray-700">Major</label>
             <div className="relative w-full max-w-sm">
@@ -82,16 +82,16 @@ export default function SettingsProfile() {
             </div>
           </div>
 
-          {/* Degree progress */}
-          <div className="flex flex-col">
-            <label className="mb-2 font-semibold text-gray-700">Degree Progress</label>
+          {/* Degree progress (manually adjustable) */}
+          <div className="flex flex-col gap-2">
+            <label className="mb-1 font-semibold text-gray-700">Degree Progress</label>
             <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
               <div
-                className="bg-blue-600 h-6 transition-all duration-500"
+                className="bg-black h-6 transition-all duration-300"
                 style={{ width: `${(completedUnits / totalUnits) * 100}%` }}
               />
             </div>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600">
               {completedUnits} / {totalUnits} units completed
             </p>
 
@@ -109,4 +109,6 @@ export default function SettingsProfile() {
     </div>
   );
 }
+
+
 
