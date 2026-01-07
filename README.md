@@ -1,1 +1,3 @@
 # ProjectCourseBuilder
+
+ProjectCourseBuilder also known as EduFind is a full-stack MVP built in 24 hours using React, Tailwind CSS, Express.js, and Supabase. It integrates the Deepseek AI API to deliver personalized course recommendations based on student transcripts. The platform parses academic performance data to generate student success ratings, enabling data-driven course selection. It also features an interactive drag-and-drop course planner leveraging the SFU Course API, allowing students to visually plan their schedules with real-time course information. This project earned the Best Use of SFU Course API award for its intuitive and innovative approach to academic planning.
