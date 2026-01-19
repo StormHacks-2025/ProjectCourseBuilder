@@ -35,7 +35,7 @@ export const Slider = ({ onLoadCourses }) => {
 
     try {
       const response = await fetch(
-        "https://projectcoursebuilder-1.onrender.com//api/generate-courses",
+        "https://projectcoursebuilder-1.onrender.com/api/generate-courses",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
