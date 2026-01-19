@@ -23,14 +23,14 @@ export default function Dashboard() {
         setUser(storedUser);
 
         // Fetch profile info
-        const profileRes = await fetch("https://projectcoursebuilder-1.onrender.com//api/profile", {
+        const profileRes = await fetch("https://projectcoursebuilder-1.onrender.com/api/profile", {
           headers: { "x-user-email": storedUser.email },
         });
         const profileData = await profileRes.json();
 
         // Fetch transcript status
         const transcriptRes = await fetch(
-          `https://projectcoursebuilder-1.onrender.com//api/transcripts?email=${storedUser.email}`
+          `https:/projectcoursebuilder-1.onrender.com//api/transcripts?email=${storedUser.email}`
         );
         const transcriptData = await transcriptRes.json();
 
