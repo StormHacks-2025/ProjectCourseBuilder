@@ -27,15 +27,3 @@ EXPOSE 10000
 
 # Start command
 CMD ["node", "src/server.js"]
-```
-
-## Step 2: Create .dockerignore
-
-In your `backend` folder, create `.dockerignore`:
-```
-node_modules
-npm-debug.log
-.env
-.git
-.gitignore
-*.md
