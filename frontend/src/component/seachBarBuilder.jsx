@@ -14,7 +14,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 
-const API_BASE = "http://localhost:4000/api";
+const API_BASE = "https://projectcoursebuilder-1.onrender.com//api";
 
 export const SearchBarBuilder = () => {
   const [selectedCourses, setSelectedCourses] = useState([]);
