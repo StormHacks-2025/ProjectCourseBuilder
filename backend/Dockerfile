@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y \
     libjpeg-dev \
     libgif-dev \
     librsvg2-dev \
+    python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
@@ -18,6 +19,9 @@ COPY package*.json ./
 
 # Install dependencies
 RUN npm ci
+
+# Rebuild native modules for the container architecture
+RUN npm rebuild canvas --build-from-source || true
 
 # Copy application code
 COPY . .
