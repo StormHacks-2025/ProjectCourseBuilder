@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { io } from "socket.io-client";
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_BASE = "https://projectcoursebuilder-1.onrender.com/";
 const DEFAULT_COURSE = "CMPT 310";
 
 export default function Community() {
