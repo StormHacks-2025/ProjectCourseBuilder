@@ -10,7 +10,7 @@ export default function SignUp() {
   const handleSignUp = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("https://projectcoursebuilder-1.onrender.com//api/signup", {
+      const response = await fetch("https://projectcoursebuilder-1.onrender.com/api/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
