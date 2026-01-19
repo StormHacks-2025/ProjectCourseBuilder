@@ -29,7 +29,7 @@ const PORT = process.env.PORT || 4000;
 // -------------------- CORS --------------------
 app.use(
   cors({
-    origin: "http://localhost:5173", // your frontend
+    origin: "https://edufinderhack.netlify.app", // your frontend
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "x-user-email", "Authorization"],
     credentials: false,
