@@ -17,13 +17,16 @@ export default function SignUp() {
       });
 
       const data = await response.json();
+
+       // Save user to localStorage
+      localStorage.setItem("currentUser", JSON.stringify(data.user));
+      
       if (!response.ok) {
         alert(data.message || "Signup failed");
         return;
       }
 
-      // Save user to localStorage
-      localStorage.setItem("currentUser", JSON.stringify(data.user));
+     
 
       // Optionally fetch profile info or other user-specific data
       const profileRes = await fetch("http://localhost:4000/api/profile", {
