@@ -10,7 +10,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:4000/api/login", {
+      const response = await fetch("https://projectcoursebuilder-1.onrender.com//api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -27,7 +27,7 @@ export default function Login() {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       // Optionally fetch profile info or other user-specific data
-      const profileRes = await fetch("http://localhost:4000/api/profile", {
+      const profileRes = await fetch("https://projectcoursebuilder-1.onrender.com//api/profile", {
         headers: { "x-user-email": data.user.email },
       });
       const profileData = await profileRes.json();
