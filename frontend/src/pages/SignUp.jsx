@@ -29,7 +29,7 @@ export default function SignUp() {
      
 
       // Optionally fetch profile info or other user-specific data
-      const profileRes = await fetch("https://projectcoursebuilder-1.onrender.com//api/profile", {
+      const profileRes = await fetch("https://projectcoursebuilder-1.onrender.com/api/profile", {
         headers: { "x-user-email": data.user.email },
       });
       const profileData = await profileRes.json();
