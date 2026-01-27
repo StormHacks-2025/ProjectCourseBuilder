@@ -2,26 +2,15 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import axios from "axios";
-
-
-
-
-
-
 import fileUpload from "express-fileupload";
 import { supabase } from "./db.js"; // Supabase client
 import { v4 as uuidv4 } from "uuid";
 import pdfRoute from "./routes/pdfRoute.js"; // PDF routes
-
 import coursesRouter from "./routes/courseJa.js";
 import courseStatsRoutes from "./routes/courseStats.js";
+
 dotenv.config(); // loads .env
 console.log("Gemini API key loaded:", process.env.GEMINI_API_KEY ? "✅ Yes" : "❌ No");
-
-
-
-
-// Add this with your other route imports
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -41,10 +30,29 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload()); // for PDF uploads
 
-// -------------------- Routes --------------------
+// -------------------- Health Check (CRITICAL for Render) --------------------
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'Server is running', 
+    status: 'ok',
+    endpoints: {
+      health: '/health',
+      signup: '/api/signup',
+      login: '/api/login',
+      courses: '/api/courses',
+      generateCourses: '/api/generate-courses'
+    }
+  });
+});
+
+// -------------------- Routes --------------------
 app.use("/api/course-stats", courseStatsRoutes);
 app.use("/api/courses", coursesRouter);
+
 // Signup
 app.post("/api/signup", async (req, res) => {
   const { name, email, password } = req.body;
@@ -107,8 +115,7 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-const DEEPSEEK_API_KEY =
-  process.env.DEEPSEEK_API_KEY
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const API_BASE = "https://projectcoursebuilder-1.onrender.com/api";
 
 app.post("/api/generate-courses", async (req, res) => {
@@ -134,8 +141,7 @@ app.post("/api/generate-courses", async (req, res) => {
           },
           {
             role: "user",
-            content: `User request: "${userPrompt || "Recommend courses for me"
-              }"
+            content: `User request: "${userPrompt || "Recommend courses for me"}"
             
 Student's completed courses: ${transcript.join(", ")}
 
@@ -303,21 +309,21 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
         // === Build enriched course object ===
         const days = schedules[0]?.days
           ? (() => {
-            const daysMap = {
-              Mo: "Mon",
-              Tu: "Tue",
-              We: "Wed",
-              Th: "Thu",
-              Fr: "Fri",
-            };
-            const daysString = schedules[0].days;
-            const result = [];
-            for (let i = 0; i < daysString.length; i += 2) {
-              const dayCode = daysString.substr(i, 2);
-              if (daysMap[dayCode]) result.push(daysMap[dayCode]);
-            }
-            return result.length > 0 ? result : ["Mon", "Wed"];
-          })()
+              const daysMap = {
+                Mo: "Mon",
+                Tu: "Tue",
+                We: "Wed",
+                Th: "Thu",
+                Fr: "Fri",
+              };
+              const daysString = schedules[0].days;
+              const result = [];
+              for (let i = 0; i < daysString.length; i += 2) {
+                const dayCode = daysString.substr(i, 2);
+                if (daysMap[dayCode]) result.push(daysMap[dayCode]);
+              }
+              return result.length > 0 ? result : ["Mon", "Wed"];
+            })()
           : ["Mon", "Wed"];
 
         enrichedCourses.push({
@@ -327,8 +333,8 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
             number >= 400
               ? "Advanced"
               : number >= 200
-                ? "Intermediate"
-                : "Beginner",
+              ? "Intermediate"
+              : "Beginner",
           department,
           courseNumber: number,
           days,
@@ -347,10 +353,10 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
             number >= 400
               ? "4th Year"
               : number >= 300
-                ? "3rd Year"
-                : number >= 200
-                  ? "2nd Year"
-                  : "1st Year",
+              ? "3rd Year"
+              : number >= 200
+              ? "2nd Year"
+              : "1st Year",
           breadth: outline.info?.designation || "N/A",
           friendsInCourse: stats.friendsCount,
           dropPercent: stats.dropPercent,
@@ -410,8 +416,9 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
 
 Student's completed courses: ${transcript.join(", ")}
 
-Recommend ${5 - enrichedCourses.length
-                  } alternative SFU CS courses that ARE commonly offered.
+Recommend ${
+                  5 - enrichedCourses.length
+                } alternative SFU CS courses that ARE commonly offered.
 Respond ONLY as a valid JSON array like:
 [
   {"department": "CMPT", "number": "213"},
@@ -488,7 +495,6 @@ Focus on popular courses like CMPT 213, 276, 225, 295, 320, 371.`,
     });
   }
 });
-
 
 // Get profile
 app.get("/api/profile", async (req, res) => {
@@ -589,66 +595,11 @@ app.get("/api/transcripts", async (req, res) => {
   }
 });
 
-app.get("/api/profile", async (req, res) => {
-  const userEmail = req.headers["x-user-email"];
-  if (!userEmail) return res.status(400).json({ error: "Email required" });
-
-  const { data: users, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("email", userEmail)
-    .limit(1)
-    .single();
-
-  if (error) return res.status(500).json({ error: error.message });
-  if (!users) return res.status(404).json({ error: "User not found" });
-
-  res.json({ user: users });
-});
-
-app.get("/api/transcripts", async (req, res) => {
-  const email = req.query.email;
-  if (!email) return res.status(400).json({ error: "Email required" });
-
-  try {
-    // 1️⃣ Find the user by email
-    const { data: users, error: userError } = await supabase
-      .from("users")
-      .select("id")
-      .eq("email", email)
-      .limit(1);
-
-    if (userError) throw userError;
-    if (!users || users.length === 0)
-      return res.status(404).json({ error: "User not found" });
-
-    const userId = users[0].id;
-
-    // 2️⃣ Check if the user has transcripts
-    const { data: transcripts, error: transcriptsError } = await supabase
-      .from("transcripts")
-      .select("id")
-      .eq("user_id", userId)
-      .limit(1);
-
-    if (transcriptsError) throw transcriptsError;
-
-    // 3️⃣ Return boolean flag
-    res.json({ set: transcripts && transcripts.length > 0 });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch transcripts" });
-  }
-});
-
-// Mount the courses router
-app.use("/api", coursesRouter);
 // -------------------- PDF Routes --------------------
 app.use("/api/pdf", pdfRoute); // your PDF upload route
 
 // -------------------- Start Server --------------------
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`✅ Server running on http://localhost:${PORT}`);
+  console.log(`✅ Health check available at http://localhost:${PORT}/health`);
 });
-
-
