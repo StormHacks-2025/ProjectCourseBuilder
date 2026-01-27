@@ -106,9 +106,9 @@ export default function Community() {
           prev.map((p) =>
             p._id === reply.parentId
               ? {
-                  ...p,
-                  replies: [mapComment(reply), ...(p.replies || [])],
-                }
+                ...p,
+                replies: [mapComment(reply), ...(p.replies || [])],
+              }
               : p
           )
         );
@@ -121,11 +121,11 @@ export default function Community() {
           p._id === commentId
             ? { ...p, likesCount }
             : {
-                ...p,
-                replies: p.replies?.map((r) =>
-                  r._id === commentId ? { ...r, likesCount } : r
-                ) || p.replies,
-              }
+              ...p,
+              replies: p.replies?.map((r) =>
+                r._id === commentId ? { ...r, likesCount } : r
+              ) || p.replies,
+            }
         )
       );
     });
@@ -134,10 +134,10 @@ export default function Community() {
   }, [selectedCourse]);
 
   async function fetchTrending() {
-   try {
-     const res = await fetch(`${API_BASE}/api/community/trending`, { headers });
-     if (!res.ok) throw new Error('Failed');
-     const data = await res.json();
+    try {
+      const res = await fetch(`${API_BASE}/api/community/trending`, { headers });
+      if (!res.ok) throw new Error('Failed');
+      const data = await res.json();
       setTrending(
         data.length
           ? data
@@ -211,10 +211,10 @@ export default function Community() {
       setThread((prev) =>
         prev
           ? {
-              ...prev,
-              postsCount: prev.postsCount + 1,
-              lastActivityAt: created.createdAt,
-            }
+            ...prev,
+            postsCount: prev.postsCount + 1,
+            lastActivityAt: created.createdAt,
+          }
           : prev
       );
       setText('');
@@ -257,7 +257,7 @@ export default function Community() {
   return (
     <div className="community-grid">
       <aside className="community-card community-card--nav">
-        <h2 className="community-card__title">Course Threads</h2>
+        <h2 className="community-card__title">Course Threads (DEMO-VISUAL PREVIEW)</h2>
         <p className="community-card__subtitle">Join conversations by course</p>
         <div className="community-search">
           <input
@@ -273,9 +273,8 @@ export default function Community() {
           {courseList.map((course) => (
             <button
               key={course.courseCode}
-              className={`community-nav__item ${
-                course.courseCode === selectedCourse ? 'community-nav__item--active' : ''
-              }`}
+              className={`community-nav__item ${course.courseCode === selectedCourse ? 'community-nav__item--active' : ''
+                }`}
               onClick={() => setSelectedCourse(course.courseCode)}
             >
               <span className="community-nav__code">{course.courseCode}</span>

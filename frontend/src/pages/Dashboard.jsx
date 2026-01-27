@@ -51,7 +51,7 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <header className="dashboard-page__header">
         <div>
-          <h1 className="dashboard-page__title">Dashboard</h1>
+          <h1 className="dashboard-page__title">Dashboard (DEMO-VISUAL PREVIEW) TRY THE COURSE BUILDER PAGE FOR INTERACTIVITY</h1>
           <p className="dashboard-page__subtitle">
             Welcome, {user?.name ?? "Student"}! Your current progress overview
           </p>

@@ -37,8 +37,8 @@ export default function Login() {
       // Redirect to dashboard
       navigate("/dashboard");
     } catch (err) {
-     
-      
+
+
       alert("Login failed. Please try again.");
       console.error(err);
     }
@@ -48,7 +48,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white shadow-md rounded-2xl p-8 w-full max-w-md">
         <h2 className="text-3xl font-semibold mb-6 text-center text-gray-800">
-          Log In
+          Log In (for demo reasons: Try a@a.com and a )
         </h2>
         <form onSubmit={handleLogin} className="flex flex-col gap-5">
           <input

@@ -65,7 +65,7 @@ export const Pricing=()=> {
           animate={{ opacity: 1, y: 0 }}
           className="text-5xl font-bold mb-4 text-gray-900"
         >
-          Choose Your Plan
+          Choose Your Plan (DEMO-VISUAL PREVIEW)
         </motion.h1>
         <motion.p
           initial={{ opacity: 0, y: -10 }}

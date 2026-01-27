@@ -22,7 +22,7 @@ export default function Settings({ userEmail }) {
     formData.append("pdf", file);
 
     try {
-      const res = await fetch("https://projectcoursebuilder-1.onrender.com/api/upload-pdf", {
+      const res = await fetch("https://projectcoursebuilder-1.onrender.com/api/upload", {
         method: "POST",
         headers: { "x-user-email": userEmail },
         body: formData,

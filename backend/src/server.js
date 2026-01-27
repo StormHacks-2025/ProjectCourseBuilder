@@ -111,8 +111,8 @@ app.post("/api/login", async (req, res) => {
 });
 
 const DEEPSEEK_API_KEY =
-  process.env.DEEPSEEK_API_KEY 
-const API_BASE = "http://localhost:4000/api";
+  process.env.DEEPSEEK_API_KEY
+const API_BASE = "https://projectcoursebuilder-1.onrender.com/api";
 
 app.post("/api/generate-courses", async (req, res) => {
   const { userPrompt, transcript } = req.body;
@@ -137,9 +137,8 @@ app.post("/api/generate-courses", async (req, res) => {
           },
           {
             role: "user",
-            content: `User request: "${
-              userPrompt || "Recommend courses for me"
-            }"
+            content: `User request: "${userPrompt || "Recommend courses for me"
+              }"
             
 Student's completed courses: ${transcript.join(", ")}
 
@@ -307,21 +306,21 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
         // === Build enriched course object ===
         const days = schedules[0]?.days
           ? (() => {
-              const daysMap = {
-                Mo: "Mon",
-                Tu: "Tue",
-                We: "Wed",
-                Th: "Thu",
-                Fr: "Fri",
-              };
-              const daysString = schedules[0].days;
-              const result = [];
-              for (let i = 0; i < daysString.length; i += 2) {
-                const dayCode = daysString.substr(i, 2);
-                if (daysMap[dayCode]) result.push(daysMap[dayCode]);
-              }
-              return result.length > 0 ? result : ["Mon", "Wed"];
-            })()
+            const daysMap = {
+              Mo: "Mon",
+              Tu: "Tue",
+              We: "Wed",
+              Th: "Thu",
+              Fr: "Fri",
+            };
+            const daysString = schedules[0].days;
+            const result = [];
+            for (let i = 0; i < daysString.length; i += 2) {
+              const dayCode = daysString.substr(i, 2);
+              if (daysMap[dayCode]) result.push(daysMap[dayCode]);
+            }
+            return result.length > 0 ? result : ["Mon", "Wed"];
+          })()
           : ["Mon", "Wed"];
 
         enrichedCourses.push({
@@ -331,8 +330,8 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
             number >= 400
               ? "Advanced"
               : number >= 200
-              ? "Intermediate"
-              : "Beginner",
+                ? "Intermediate"
+                : "Beginner",
           department,
           courseNumber: number,
           days,
@@ -351,10 +350,10 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
             number >= 400
               ? "4th Year"
               : number >= 300
-              ? "3rd Year"
-              : number >= 200
-              ? "2nd Year"
-              : "1st Year",
+                ? "3rd Year"
+                : number >= 200
+                  ? "2nd Year"
+                  : "1st Year",
           breadth: outline.info?.designation || "N/A",
           friendsInCourse: stats.friendsCount,
           dropPercent: stats.dropPercent,
@@ -414,9 +413,8 @@ Use real SFU course codes. Focus on courses that build on completed courses and 
 
 Student's completed courses: ${transcript.join(", ")}
 
-Recommend ${
-                  5 - enrichedCourses.length
-                } alternative SFU CS courses that ARE commonly offered.
+Recommend ${5 - enrichedCourses.length
+                  } alternative SFU CS courses that ARE commonly offered.
 Respond ONLY as a valid JSON array like:
 [
   {"department": "CMPT", "number": "213"},
