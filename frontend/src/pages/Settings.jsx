@@ -9,7 +9,6 @@ export default function Settings({ userEmail }) {
     "Transcript2.pdf",
     "Transcript3.pdf",
   ];
-
   const [goodnessScore, setGoodnessScore] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [lastResponse, setLastResponse] = useState(null);
@@ -17,17 +16,15 @@ export default function Settings({ userEmail }) {
   const handlePDFUpload = async (file) => {
     if (!file) return;
     setUploading(true);
-
     const formData = new FormData();
     formData.append("pdf", file);
 
     try {
-      const res = await fetch("https://projectcoursebuilder-1.onrender.com/api/upload", {
+      const res = await fetch("https://projectcoursebuilder-1.onrender.com/api/pdf/upload", {
         method: "POST",
         headers: { "x-user-email": userEmail },
         body: formData,
       });
-
       const data = await res.json();
       setLastResponse(data);
 
@@ -61,21 +58,45 @@ export default function Settings({ userEmail }) {
         <div className="p-6 rounded-2xl shadow-lg bg-gradient-to-br from-blue-50 via-indigo-50 to-white">
           <SettingsProfile />
 
-          {/* Goodness Score */}
-          <div className="mt-10 flex flex-col items-center">
-            
-            
+          {/* Goodness Score Display */}
+          {goodnessScore > 0 && (
+            <div className="mt-10 flex flex-col items-center">
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                Transcript Quality Score
+              </h3>
+              <div className="relative w-full max-w-md">
+                {/* Progress Bar */}
+                <div className="w-full bg-gray-200 rounded-full h-8 overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 transition-all duration-1000 ease-out flex items-center justify-center"
+                    style={{ width: `${goodnessScore}%` }}
+                  >
+                    <span className="text-white font-bold text-sm">
+                      {goodnessScore.toFixed(1)}%
+                    </span>
+                  </div>
+                </div>
 
-            {/* Optional debug info */}
-            {lastResponse && (
-              <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-center w-full">
-                Last response:{" "}
-                {lastResponse.success ? "✅ Success" : "❌ Failed"} <br />
-                Goodness: {lastResponse.goodnessScore} <br />
-                Courses processed: {lastResponse.coursesCount}
+                {/* Score Description */}
+                <p className="text-center text-gray-600 mt-3">
+                  {goodnessScore >= 80 && "Excellent transcript quality!"}
+                  {goodnessScore >= 60 && goodnessScore < 80 && "Good transcript quality"}
+                  {goodnessScore >= 40 && goodnessScore < 60 && "Fair transcript quality"}
+                  {goodnessScore < 40 && "Low transcript quality - consider uploading a clearer version"}
+                </p>
               </div>
-            )}
-          </div>
+            </div>
+          )}
+
+          {/* Optional debug info */}
+          {lastResponse && (
+            <div className="mt-4 p-2 bg-gray-100 rounded text-xs text-center w-full">
+              Last response:{" "}
+              {lastResponse.success ? "✅ Success" : "❌ Failed"} <br />
+              Goodness: {lastResponse.goodnessScore} <br />
+              Courses processed: {lastResponse.coursesCount}
+            </div>
+          )}
 
           {/* Transcript Upload */}
           <div className="mt-10">
@@ -86,7 +107,6 @@ export default function Settings({ userEmail }) {
                 recommendations.
               </p>
             </div>
-
             <div className="border border-gray-200 rounded-xl p-6 bg-gray-50">
               <TranscriptDropdown
                 files={transcriptFiles}
