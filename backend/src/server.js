@@ -10,10 +10,16 @@ import coursesRouter from "./routes/courseJa.js";
 import courseStatsRoutes from "./routes/courseStats.js";
 
 dotenv.config(); // loads .env
-console.log("Gemini API key loaded:", process.env.GEMINI_API_KEY ? "✅ Yes" : "❌ No");
+
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// -------------------- Health Check (CRITICAL for Render) --------------------
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 
 // -------------------- CORS --------------------
 app.use(
@@ -30,10 +36,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload()); // for PDF uploads
 
-// -------------------- Health Check (CRITICAL for Render) --------------------
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
-});
 
 app.get('/', (req, res) => {
   res.status(200).json({ 
