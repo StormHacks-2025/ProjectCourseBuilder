@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 4000;
 
 // -------------------- Health Check (CRITICAL for Render) --------------------
 app.get('/health', (req, res) => {
-  res.status(200).send("ok);
+  res.status(200).send("ok");
 });
 
 
